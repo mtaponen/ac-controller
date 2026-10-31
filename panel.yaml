@@ -1,0 +1,1642 @@
+esphome:
+  name: ac-panel
+  friendly_name: AC Panel
+
+esp32:
+  board: esp32-s3-devkitc-1
+  flash_size: 16MB
+  cpu_frequency: 240MHz
+  framework:
+    type: esp-idf
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+logger:
+  level: INFO
+  baud_rate: 115200
+  hardware_uart: UART0
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  # Light sleep between beacons. The radio stays available, and it
+  # stops holding the memory bus the whole time the screen is idle.
+  power_save_mode: LIGHT
+
+external_components:
+  - source:
+      type: local
+      path: components
+
+melcloud:
+  id: ac
+  email: !secret melcloud_email
+  password: !secret melcloud_password
+
+output:
+  - platform: ledc
+    id: backlight_pwm
+    pin: GPIO38
+    frequency: 1220Hz
+
+light:
+  - platform: monochromatic
+    id: backlight
+    output: backlight_pwm
+    restore_mode: ALWAYS_ON
+    default_transition_length: 0s
+
+spi:
+  - id: lcd_spi
+    clk_pin: GPIO48
+    mosi_pin: GPIO47
+
+i2c:
+  - id: touch_bus
+    sda: GPIO19
+    scl:
+      number: GPIO45
+      ignore_strapping_warning: true
+
+display:
+  - platform: mipi_rgb
+    id: tft_display
+    model: GUITION-4848S040
+    update_interval: never
+    auto_clear_enabled: false
+    setup_priority: 200
+
+touchscreen:
+  - platform: gt911
+    id: tft_touch
+    i2c_id: touch_bus
+    display: tft_display
+    # The GT911 on this board often advertises 1024x600. ESPHome then
+    # scales every tap into the top-left of the 480x480 panel.
+    calibration:
+      x_min: 0
+      x_max: 480
+      y_min: 0
+      y_max: 480
+    transform:
+      mirror_x: true
+      mirror_y: true
+
+font:
+  - file: gfonts://Roboto
+    id: font_setpoint
+    size: 64
+    glyphs: "0123456789.-"
+  - file: https://github.com/google/material-design-icons/raw/master/font/MaterialIcons-Regular.ttf
+    id: font_control
+    size: 36
+    glyphs: "\uE145\uE15B"
+  - file: gfonts://Roboto
+    id: font_mode
+    size: 28
+    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz: "
+  - file: gfonts://Roboto
+    id: font_ui
+    size: 20
+    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-: "
+  - file: gfonts://Roboto
+    id: font_small
+    size: 16
+    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 "
+  - file: gfonts://Roboto
+    id: font_mark
+    size: 12
+    glyphs: "A"
+  - file: https://github.com/google/material-design-icons/raw/master/font/MaterialIcons-Regular.ttf
+    id: font_icon
+    size: 22
+    glyphs: "\uE430\uEB3B\uE863\uE798\uE5C8\uEA18\uE0B6"
+    extras:
+      - file: https://github.com/Templarian/MaterialDesign-Webfont/raw/v7.4.47/fonts/materialdesignicons-webfont.ttf
+        glyphs: "\U000F0210"
+  - file: https://github.com/google/material-design-icons/raw/master/font/MaterialIcons-Regular.ttf
+    id: font_mode_icon
+    size: 44
+    glyphs: "\uE430\uEB3B\uE863\uE798"
+    extras:
+      - file: https://github.com/Templarian/MaterialDesign-Webfont/raw/v7.4.47/fonts/materialdesignicons-webfont.ttf
+        glyphs: "\U000F0210"
+
+lvgl:
+  displays:
+    - tft_display
+  touchscreens:
+    - tft_touch
+  rotation: 90°
+  buffer_size: 25%
+  bg_color: 0x101418
+  text_color: 0xF4F7FB
+  pages:
+    - id: main_page
+      bg_color: 0x101418
+      widgets:
+        - button:
+            id: mode_button
+            align: TOP_MID
+            y: 8
+            width: 440
+            height: 60
+            radius: 16
+            bg_color: 0x1A2330
+            border_width: 0
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 8
+            widgets:
+              - label:
+                  id: mode_icon
+                  width: 48
+                  height: 48
+                  text_align: CENTER
+                  text_font: font_mode_icon
+                  text_color: 0xB7C0CA
+                  text: "\uE863"
+                  transform_pivot_x: 50%
+                  transform_pivot_y: 50%
+                  hidden: true
+              - label:
+                  id: mode_label
+                  text: "Connecting"
+                  text_font: font_mode
+                  text_color: 0xF4F7FB
+            on_click:
+              - lvgl.page.show: settings_page
+        - obj:
+            id: status_row
+            align: TOP_MID
+            y: 70
+            width: 440
+            height: 32
+            bg_opa: TRANSP
+            border_width: 0
+            pad_all: 0
+            clickable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 6
+            widgets:
+              - obj:
+                  id: fan_status_mark
+                  width: 28
+                  height: 28
+                  bg_opa: TRANSP
+                  border_width: 0
+                  pad_all: 0
+                  clickable: false
+                  scrollable: false
+                  hidden: true
+                  widgets:
+                    - label:
+                        id: fan_status_icon
+                        align: CENTER
+                        width: 28
+                        height: 28
+                        text_align: CENTER
+                        text_font: font_icon
+                        text_color: 0xB7C0CA
+                        text: "\U000F0210"
+                        transform_pivot_x: 50%
+                        transform_pivot_y: 50%
+                        clickable: false
+                    - label:
+                        id: fan_status_auto
+                        align: CENTER
+                        x: 7
+                        y: 5
+                        text: "A"
+                        text_font: font_mark
+                        text_color: 0xF4F7FB
+                        clickable: false
+                        hidden: true
+              - label:
+                  id: status_label
+                  text: "Connecting"
+                  text_font: font_ui
+                  text_color: 0x93A0B0
+                  clickable: false
+        - arc:
+            id: setpoint_arc
+            align: CENTER
+            y: 12
+            width: 292
+            height: 292
+            pad_all: 0
+            adjustable: false
+            min_value: 120
+            max_value: 280
+            value: 200
+            arc_color: 0x243140
+            arc_width: 16
+            indicator:
+              arc_color: 0x3DB7FF
+              arc_width: 16
+            knob:
+              bg_opa: 0%
+              border_width: 0
+        - arc:
+            id: room_arc
+            align: CENTER
+            y: 12
+            width: 292
+            height: 292
+            pad_all: 0
+            hidden: true
+            adjustable: true
+            clickable: false
+            min_value: 120
+            max_value: 280
+            value: 200
+            arc_width: 16
+            arc_opa: 0%
+            indicator:
+              arc_width: 16
+              arc_opa: 0%
+            knob:
+              bg_color: 0xF4F7FB
+              bg_opa: 100%
+              border_color: 0x101418
+              border_width: 3
+              pad_all: 3
+        - label:
+            id: setpoint_label
+            align: CENTER
+            y: -8
+            text: "--"
+            text_font: font_setpoint
+            text_color: 0xF4F7FB
+        - label:
+            id: room_label
+            align: CENTER
+            y: 68
+            text: "Room --"
+            text_font: font_ui
+            text_color: 0xC5D0DC
+        - button:
+            id: minus_button
+            align: BOTTOM_LEFT
+            x: 16
+            y: -12
+            width: 148
+            height: 88
+            radius: 20
+            bg_color: 0x1A2330
+            border_width: 0
+            pad_all: 0
+            scrollable: false
+            widgets:
+              - label:
+                  width: 148
+                  height: 88
+                  x: 0
+                  y: 0
+                  text_align: CENTER
+                  pad_top: 26
+                  scrollable: false
+                  text: "\uE15B"
+                  text_font: font_control
+                  text_color: 0xF4F7FB
+            on_click:
+              - lambda: |-
+                  id(ac).adjust_setpoint(-1);
+        - button:
+            id: plus_button
+            align: BOTTOM_RIGHT
+            x: -16
+            y: -12
+            width: 148
+            height: 88
+            radius: 20
+            bg_color: 0x1A2330
+            border_width: 0
+            pad_all: 0
+            scrollable: false
+            widgets:
+              - label:
+                  width: 148
+                  height: 88
+                  x: 0
+                  y: 0
+                  text_align: CENTER
+                  pad_top: 26
+                  scrollable: false
+                  text: "\uE145"
+                  text_font: font_control
+                  text_color: 0xF4F7FB
+            on_click:
+              - lambda: |-
+                  id(ac).adjust_setpoint(1);
+    - id: settings_page
+      bg_color: 0x101418
+      widgets:
+        - button:
+            id: back_button
+            x: 12
+            y: 6
+            width: 110
+            height: 40
+            radius: 12
+            bg_color: 0x1A2330
+            border_width: 0
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+            widgets:
+              - label:
+                  text: "Back"
+                  text_align: CENTER
+                  text_font: font_ui
+            on_click:
+              - lvgl.page.show: main_page
+        - label:
+            text: "Mode"
+            x: 16
+            y: 54
+            text_font: font_ui
+            text_color: 0x93A0B0
+        - button:
+            id: mode_heat
+            x: 12
+            y: 84
+            width: 146
+            height: 52
+            radius: 12
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 6
+            widgets:
+              - label:
+                  width: 44
+                  height: 44
+                  text_align: CENTER
+                  text_font: font_mode_icon
+                  text_color: 0xF5C518
+                  text: "\uE430"
+                  transform_pivot_x: 50%
+                  transform_pivot_y: 50%
+              - label:
+                  text: "Heat"
+                  text_align: CENTER
+                  text_font: font_ui
+            on_click:
+              - lambda: |-
+                  id(ac).select_mode("heat");
+        - button:
+            id: mode_cool
+            x: 168
+            y: 84
+            width: 146
+            height: 52
+            radius: 12
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 6
+            widgets:
+              - label:
+                  width: 44
+                  height: 44
+                  text_align: CENTER
+                  text_font: font_mode_icon
+                  text_color: 0x7ECBFF
+                  text: "\uEB3B"
+                  transform_pivot_x: 50%
+                  transform_pivot_y: 50%
+              - label:
+                  text: "Cool"
+                  text_align: CENTER
+                  text_font: font_ui
+            on_click:
+              - lambda: |-
+                  id(ac).select_mode("cool");
+        - button:
+            id: mode_auto
+            x: 324
+            y: 84
+            width: 146
+            height: 52
+            radius: 12
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 6
+            widgets:
+              - label:
+                  width: 44
+                  height: 44
+                  text_align: CENTER
+                  text_font: font_mode_icon
+                  text_color: 0xB7C0CA
+                  text: "\uE863"
+                  transform_pivot_x: 50%
+                  transform_pivot_y: 50%
+              - label:
+                  text: "Auto"
+                  text_align: CENTER
+                  text_font: font_ui
+            on_click:
+              - lambda: |-
+                  id(ac).select_mode("auto");
+        - label:
+            text: "Fan"
+            x: 16
+            y: 144
+            text_font: font_ui
+            text_color: 0x93A0B0
+        - button:
+            id: fan_0
+            x: 8
+            y: 174
+            width: 74
+            height: 50
+            radius: 10
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 3
+            widgets:
+              - obj:
+                  width: 26
+                  height: 26
+                  bg_opa: TRANSP
+                  border_width: 0
+                  pad_all: 0
+                  clickable: false
+                  scrollable: false
+                  widgets:
+                    - label:
+                        id: fan_icon_0
+                        align: CENTER
+                        width: 26
+                        height: 26
+                        text_align: CENTER
+                        text_font: font_icon
+                        text_color: 0xB7C0CA
+                        text: "\U000F0210"
+                        transform_pivot_x: 50%
+                        transform_pivot_y: 50%
+                        clickable: false
+                    - label:
+                        id: fan_auto_0
+                        align: CENTER
+                        x: 6
+                        y: 4
+                        text: "A"
+                        text_font: font_mark
+                        text_color: 0xF4F7FB
+                        clickable: false
+                        hidden: true
+              - label:
+                  id: fan_label_0
+                  text: " "
+                  text_align: CENTER
+                  text_font: font_small
+            on_click:
+              - lambda: |-
+                  id(ac).select_fan(0);
+        - button:
+            id: fan_1
+            x: 86
+            y: 174
+            width: 74
+            height: 50
+            radius: 10
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 3
+            widgets:
+              - label:
+                  id: fan_icon_1
+                  width: 26
+                  height: 26
+                  text_align: CENTER
+                  text_font: font_icon
+                  text_color: 0xB7C0CA
+                  text: "\U000F0210"
+                  transform_pivot_x: 50%
+                  transform_pivot_y: 50%
+              - label:
+                  id: fan_label_1
+                  text: " "
+                  text_align: CENTER
+                  text_font: font_small
+            on_click:
+              - lambda: |-
+                  id(ac).select_fan(1);
+        - button:
+            id: fan_2
+            x: 164
+            y: 174
+            width: 74
+            height: 50
+            radius: 10
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 3
+            widgets:
+              - label:
+                  id: fan_icon_2
+                  width: 26
+                  height: 26
+                  text_align: CENTER
+                  text_font: font_icon
+                  text_color: 0xB7C0CA
+                  text: "\U000F0210"
+                  transform_pivot_x: 50%
+                  transform_pivot_y: 50%
+              - label:
+                  id: fan_label_2
+                  text: " "
+                  text_align: CENTER
+                  text_font: font_small
+            on_click:
+              - lambda: |-
+                  id(ac).select_fan(2);
+        - button:
+            id: fan_3
+            x: 242
+            y: 174
+            width: 74
+            height: 50
+            radius: 10
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 3
+            widgets:
+              - label:
+                  id: fan_icon_3
+                  width: 26
+                  height: 26
+                  text_align: CENTER
+                  text_font: font_icon
+                  text_color: 0xB7C0CA
+                  text: "\U000F0210"
+                  transform_pivot_x: 50%
+                  transform_pivot_y: 50%
+              - label:
+                  id: fan_label_3
+                  text: " "
+                  text_align: CENTER
+                  text_font: font_small
+            on_click:
+              - lambda: |-
+                  id(ac).select_fan(3);
+        - button:
+            id: fan_4
+            x: 320
+            y: 174
+            width: 74
+            height: 50
+            radius: 10
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 3
+            widgets:
+              - label:
+                  id: fan_icon_4
+                  width: 26
+                  height: 26
+                  text_align: CENTER
+                  text_font: font_icon
+                  text_color: 0xB7C0CA
+                  text: "\U000F0210"
+                  transform_pivot_x: 50%
+                  transform_pivot_y: 50%
+              - label:
+                  id: fan_label_4
+                  text: " "
+                  text_align: CENTER
+                  text_font: font_small
+            on_click:
+              - lambda: |-
+                  id(ac).select_fan(4);
+        - button:
+            id: fan_5
+            x: 398
+            y: 174
+            width: 74
+            height: 50
+            radius: 10
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 3
+            widgets:
+              - label:
+                  id: fan_icon_5
+                  width: 26
+                  height: 26
+                  text_align: CENTER
+                  text_font: font_icon
+                  text_color: 0xB7C0CA
+                  text: "\U000F0210"
+                  transform_pivot_x: 50%
+                  transform_pivot_y: 50%
+              - label:
+                  id: fan_label_5
+                  text: " "
+                  text_align: CENTER
+                  text_font: font_small
+            on_click:
+              - lambda: |-
+                  id(ac).select_fan(5);
+        - label:
+            id: vane_h_title
+            text: "Horizontal"
+            x: 16
+            y: 230
+            text_font: font_ui
+            text_color: 0x93A0B0
+        - button:
+            id: vh_0
+            x: 12
+            y: 260
+            width: 110
+            height: 42
+            radius: 10
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 4
+            widgets:
+              - label:
+                  id: vh_icon_0
+                  width: 26
+                  height: 26
+                  text_align: CENTER
+                  text_font: font_icon
+                  text_color: 0xB7C0CA
+                  text: "\U000F0210"
+                  transform_pivot_x: 50%
+                  transform_pivot_y: 50%
+              - label:
+                  id: vh_label_0
+                  text: " "
+                  text_align: CENTER
+                  text_font: font_small
+            on_click:
+              - lambda: |-
+                  id(ac).select_vane_h(0);
+        - button:
+            id: vh_1
+            x: 128
+            y: 260
+            width: 110
+            height: 42
+            radius: 10
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 4
+            widgets:
+              - label:
+                  id: vh_icon_1
+                  width: 26
+                  height: 26
+                  text_align: CENTER
+                  text_font: font_icon
+                  text_color: 0xB7C0CA
+                  text: "\U000F0210"
+                  transform_pivot_x: 50%
+                  transform_pivot_y: 50%
+              - label:
+                  id: vh_label_1
+                  text: " "
+                  text_align: CENTER
+                  text_font: font_small
+            on_click:
+              - lambda: |-
+                  id(ac).select_vane_h(1);
+        - button:
+            id: vh_2
+            x: 244
+            y: 260
+            width: 110
+            height: 42
+            radius: 10
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 4
+            widgets:
+              - label:
+                  id: vh_icon_2
+                  width: 26
+                  height: 26
+                  text_align: CENTER
+                  text_font: font_icon
+                  text_color: 0xB7C0CA
+                  text: "\U000F0210"
+                  transform_pivot_x: 50%
+                  transform_pivot_y: 50%
+              - label:
+                  id: vh_label_2
+                  text: " "
+                  text_align: CENTER
+                  text_font: font_small
+            on_click:
+              - lambda: |-
+                  id(ac).select_vane_h(2);
+        - button:
+            id: vh_3
+            x: 360
+            y: 260
+            width: 110
+            height: 42
+            radius: 10
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 4
+            widgets:
+              - label:
+                  id: vh_icon_3
+                  width: 26
+                  height: 26
+                  text_align: CENTER
+                  text_font: font_icon
+                  text_color: 0xB7C0CA
+                  text: "\U000F0210"
+                  transform_pivot_x: 50%
+                  transform_pivot_y: 50%
+              - label:
+                  id: vh_label_3
+                  text: " "
+                  text_align: CENTER
+                  text_font: font_small
+            on_click:
+              - lambda: |-
+                  id(ac).select_vane_h(3);
+        - button:
+            id: vh_4
+            x: 12
+            y: 308
+            width: 110
+            height: 42
+            radius: 10
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 4
+            widgets:
+              - label:
+                  id: vh_icon_4
+                  width: 26
+                  height: 26
+                  text_align: CENTER
+                  text_font: font_icon
+                  text_color: 0xB7C0CA
+                  text: "\U000F0210"
+                  transform_pivot_x: 50%
+                  transform_pivot_y: 50%
+              - label:
+                  id: vh_label_4
+                  text: " "
+                  text_align: CENTER
+                  text_font: font_small
+            on_click:
+              - lambda: |-
+                  id(ac).select_vane_h(4);
+        - button:
+            id: vh_5
+            x: 128
+            y: 308
+            width: 110
+            height: 42
+            radius: 10
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 4
+            widgets:
+              - label:
+                  id: vh_icon_5
+                  width: 26
+                  height: 26
+                  text_align: CENTER
+                  text_font: font_icon
+                  text_color: 0xB7C0CA
+                  text: "\U000F0210"
+                  transform_pivot_x: 50%
+                  transform_pivot_y: 50%
+              - label:
+                  id: vh_label_5
+                  text: " "
+                  text_align: CENTER
+                  text_font: font_small
+            on_click:
+              - lambda: |-
+                  id(ac).select_vane_h(5);
+        - button:
+            id: vh_6
+            x: 244
+            y: 308
+            width: 110
+            height: 42
+            radius: 10
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 4
+            widgets:
+              - label:
+                  id: vh_icon_6
+                  width: 26
+                  height: 26
+                  text_align: CENTER
+                  text_font: font_icon
+                  text_color: 0xB7C0CA
+                  text: "\U000F0210"
+                  transform_pivot_x: 50%
+                  transform_pivot_y: 50%
+              - label:
+                  id: vh_label_6
+                  text: " "
+                  text_align: CENTER
+                  text_font: font_small
+            on_click:
+              - lambda: |-
+                  id(ac).select_vane_h(6);
+        - button:
+            id: vh_7
+            x: 360
+            y: 308
+            width: 110
+            height: 42
+            radius: 10
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 4
+            widgets:
+              - label:
+                  id: vh_icon_7
+                  width: 26
+                  height: 26
+                  text_align: CENTER
+                  text_font: font_icon
+                  text_color: 0xB7C0CA
+                  text: "\U000F0210"
+                  transform_pivot_x: 50%
+                  transform_pivot_y: 50%
+              - label:
+                  id: vh_label_7
+                  text: " "
+                  text_align: CENTER
+                  text_font: font_small
+            on_click:
+              - lambda: |-
+                  id(ac).select_vane_h(7);
+        - label:
+            id: vane_v_title
+            text: "Vertical"
+            x: 16
+            y: 360
+            text_font: font_ui
+            text_color: 0x93A0B0
+        - button:
+            id: vv_0
+            x: 12
+            y: 390
+            width: 110
+            height: 42
+            radius: 10
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 4
+            widgets:
+              - label:
+                  id: vv_icon_0
+                  width: 26
+                  height: 26
+                  text_align: CENTER
+                  text_font: font_icon
+                  text_color: 0xB7C0CA
+                  text: "\U000F0210"
+                  transform_pivot_x: 50%
+                  transform_pivot_y: 50%
+              - label:
+                  id: vv_label_0
+                  text: " "
+                  text_align: CENTER
+                  text_font: font_small
+            on_click:
+              - lambda: |-
+                  id(ac).select_vane_v(0);
+        - button:
+            id: vv_1
+            x: 128
+            y: 390
+            width: 110
+            height: 42
+            radius: 10
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 4
+            widgets:
+              - label:
+                  id: vv_icon_1
+                  width: 26
+                  height: 26
+                  text_align: CENTER
+                  text_font: font_icon
+                  text_color: 0xB7C0CA
+                  text: "\U000F0210"
+                  transform_pivot_x: 50%
+                  transform_pivot_y: 50%
+              - label:
+                  id: vv_label_1
+                  text: " "
+                  text_align: CENTER
+                  text_font: font_small
+            on_click:
+              - lambda: |-
+                  id(ac).select_vane_v(1);
+        - button:
+            id: vv_2
+            x: 244
+            y: 390
+            width: 110
+            height: 42
+            radius: 10
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 4
+            widgets:
+              - label:
+                  id: vv_icon_2
+                  width: 26
+                  height: 26
+                  text_align: CENTER
+                  text_font: font_icon
+                  text_color: 0xB7C0CA
+                  text: "\U000F0210"
+                  transform_pivot_x: 50%
+                  transform_pivot_y: 50%
+              - label:
+                  id: vv_label_2
+                  text: " "
+                  text_align: CENTER
+                  text_font: font_small
+            on_click:
+              - lambda: |-
+                  id(ac).select_vane_v(2);
+        - button:
+            id: vv_3
+            x: 360
+            y: 390
+            width: 110
+            height: 42
+            radius: 10
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 4
+            widgets:
+              - label:
+                  id: vv_icon_3
+                  width: 26
+                  height: 26
+                  text_align: CENTER
+                  text_font: font_icon
+                  text_color: 0xB7C0CA
+                  text: "\U000F0210"
+                  transform_pivot_x: 50%
+                  transform_pivot_y: 50%
+              - label:
+                  id: vv_label_3
+                  text: " "
+                  text_align: CENTER
+                  text_font: font_small
+            on_click:
+              - lambda: |-
+                  id(ac).select_vane_v(3);
+        - button:
+            id: vv_4
+            x: 12
+            y: 438
+            width: 110
+            height: 42
+            radius: 10
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 4
+            widgets:
+              - label:
+                  id: vv_icon_4
+                  width: 26
+                  height: 26
+                  text_align: CENTER
+                  text_font: font_icon
+                  text_color: 0xB7C0CA
+                  text: "\U000F0210"
+                  transform_pivot_x: 50%
+                  transform_pivot_y: 50%
+              - label:
+                  id: vv_label_4
+                  text: " "
+                  text_align: CENTER
+                  text_font: font_small
+            on_click:
+              - lambda: |-
+                  id(ac).select_vane_v(4);
+        - button:
+            id: vv_5
+            x: 128
+            y: 438
+            width: 110
+            height: 42
+            radius: 10
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 4
+            widgets:
+              - label:
+                  id: vv_icon_5
+                  width: 26
+                  height: 26
+                  text_align: CENTER
+                  text_font: font_icon
+                  text_color: 0xB7C0CA
+                  text: "\U000F0210"
+                  transform_pivot_x: 50%
+                  transform_pivot_y: 50%
+              - label:
+                  id: vv_label_5
+                  text: " "
+                  text_align: CENTER
+                  text_font: font_small
+            on_click:
+              - lambda: |-
+                  id(ac).select_vane_v(5);
+        - button:
+            id: vv_6
+            x: 244
+            y: 438
+            width: 110
+            height: 42
+            radius: 10
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+              pad_column: 4
+            widgets:
+              - label:
+                  id: vv_icon_6
+                  width: 26
+                  height: 26
+                  text_align: CENTER
+                  text_font: font_icon
+                  text_color: 0xB7C0CA
+                  text: "\U000F0210"
+                  transform_pivot_x: 50%
+                  transform_pivot_y: 50%
+              - label:
+                  id: vv_label_6
+                  text: " "
+                  text_align: CENTER
+                  text_font: font_small
+            on_click:
+              - lambda: |-
+                  id(ac).select_vane_v(6);
+
+interval:
+  - interval: 500ms
+    then:
+      - lvgl.label.update:
+          id: mode_label
+          text: !lambda 'return id(ac).mode_line();'
+      - lvgl.label.update:
+          id: status_label
+          text: !lambda 'return id(ac).status_text();'
+      - lambda: |-
+          auto paint = [](lv_obj_t *obj, const char *glyph, int angle, float scale) {
+            lv_label_set_text(obj, glyph);
+            lv_obj_set_style_transform_rotation(obj, angle * 10, LV_PART_MAIN);
+            lv_obj_set_style_transform_scale(obj, (int32_t) (scale * 256.0f), LV_PART_MAIN);
+          };
+          if (id(ac).has_live_state()) {
+            lv_obj_remove_flag(id(mode_icon), LV_OBJ_FLAG_HIDDEN);
+            paint(id(mode_icon), id(ac).mode_icon(), 0, 1.0f);
+            lv_obj_set_style_text_color(id(mode_icon), lv_color_hex(id(ac).mode_icon_color()), LV_PART_MAIN);
+            lv_obj_remove_flag(id(fan_status_mark), LV_OBJ_FLAG_HIDDEN);
+            paint(id(fan_status_icon), id(ac).current_fan_icon(), 0, id(ac).current_fan_scale());
+            if (id(ac).current_fan_is_auto()) {
+              lv_obj_remove_flag(id(fan_status_auto), LV_OBJ_FLAG_HIDDEN);
+            } else {
+              lv_obj_add_flag(id(fan_status_auto), LV_OBJ_FLAG_HIDDEN);
+            }
+          } else {
+            lv_obj_add_flag(id(mode_icon), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(fan_status_mark), LV_OBJ_FLAG_HIDDEN);
+          }
+          paint(id(fan_icon_0), id(ac).fan_icon(0), 0, id(ac).fan_scale(0));
+          if (id(ac).fan_is_auto(0)) {
+            lv_obj_remove_flag(id(fan_auto_0), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(fan_auto_0), LV_OBJ_FLAG_HIDDEN);
+          }
+          paint(id(fan_icon_1), id(ac).fan_icon(1), 0, id(ac).fan_scale(1));
+          paint(id(fan_icon_2), id(ac).fan_icon(2), 0, id(ac).fan_scale(2));
+          paint(id(fan_icon_3), id(ac).fan_icon(3), 0, id(ac).fan_scale(3));
+          paint(id(fan_icon_4), id(ac).fan_icon(4), 0, id(ac).fan_scale(4));
+          paint(id(fan_icon_5), id(ac).fan_icon(5), 0, id(ac).fan_scale(5));
+          paint(id(vh_icon_0), id(ac).vane_h_icon(0), id(ac).vane_h_angle(0), 1.0f);
+          paint(id(vh_icon_1), id(ac).vane_h_icon(1), id(ac).vane_h_angle(1), 1.0f);
+          paint(id(vh_icon_2), id(ac).vane_h_icon(2), id(ac).vane_h_angle(2), 1.0f);
+          paint(id(vh_icon_3), id(ac).vane_h_icon(3), id(ac).vane_h_angle(3), 1.0f);
+          paint(id(vh_icon_4), id(ac).vane_h_icon(4), id(ac).vane_h_angle(4), 1.0f);
+          paint(id(vh_icon_5), id(ac).vane_h_icon(5), id(ac).vane_h_angle(5), 1.0f);
+          paint(id(vh_icon_6), id(ac).vane_h_icon(6), id(ac).vane_h_angle(6), 1.0f);
+          paint(id(vh_icon_7), id(ac).vane_h_icon(7), id(ac).vane_h_angle(7), 1.0f);
+          paint(id(vv_icon_0), id(ac).vane_v_icon(0), id(ac).vane_v_angle(0), 1.0f);
+          paint(id(vv_icon_1), id(ac).vane_v_icon(1), id(ac).vane_v_angle(1), 1.0f);
+          paint(id(vv_icon_2), id(ac).vane_v_icon(2), id(ac).vane_v_angle(2), 1.0f);
+          paint(id(vv_icon_3), id(ac).vane_v_icon(3), id(ac).vane_v_angle(3), 1.0f);
+          paint(id(vv_icon_4), id(ac).vane_v_icon(4), id(ac).vane_v_angle(4), 1.0f);
+          paint(id(vv_icon_5), id(ac).vane_v_icon(5), id(ac).vane_v_angle(5), 1.0f);
+          paint(id(vv_icon_6), id(ac).vane_v_icon(6), id(ac).vane_v_angle(6), 1.0f);
+      - lvgl.label.update:
+          id: setpoint_label
+          text: !lambda 'return id(ac).setpoint_text();'
+      - lvgl.label.update:
+          id: room_label
+          text: !lambda 'return id(ac).room_text();'
+      - if:
+          condition:
+            lambda: 'return id(ac).has_state();'
+          then:
+            - lvgl.arc.update:
+                id: setpoint_arc
+                min_value: !lambda 'return id(ac).arc_min();'
+                max_value: !lambda 'return id(ac).arc_max();'
+                value: !lambda 'return id(ac).arc_value();'
+            - lvgl.arc.update:
+                id: room_arc
+                min_value: !lambda 'return id(ac).arc_min();'
+                max_value: !lambda 'return id(ac).arc_max();'
+                value: !lambda 'return id(ac).arc_room();'
+            - lvgl.widget.update:
+                id: room_arc
+                hidden: false
+          else:
+            - lvgl.widget.update:
+                id: room_arc
+                hidden: true
+      - lvgl.widget.update:
+          id: mode_heat
+          state:
+            checked: !lambda 'return id(ac).mode_is("heat");'
+      - lvgl.widget.update:
+          id: mode_cool
+          state:
+            checked: !lambda 'return id(ac).mode_is("cool");'
+      - lvgl.widget.update:
+          id: mode_auto
+          state:
+            checked: !lambda 'return id(ac).mode_is("auto");'
+      - lvgl.label.update:
+          id: fan_label_0
+          text: !lambda 'return id(ac).fan_label(0);'
+      - lvgl.widget.update:
+          id: fan_0
+          hidden: !lambda 'return id(ac).fan_count() <= 0;'
+          state:
+            checked: !lambda 'return id(ac).fan_selected(0);'
+      - lvgl.label.update:
+          id: fan_label_1
+          text: !lambda 'return id(ac).fan_label(1);'
+      - lvgl.widget.update:
+          id: fan_1
+          hidden: !lambda 'return id(ac).fan_count() <= 1;'
+          state:
+            checked: !lambda 'return id(ac).fan_selected(1);'
+      - lvgl.label.update:
+          id: fan_label_2
+          text: !lambda 'return id(ac).fan_label(2);'
+      - lvgl.widget.update:
+          id: fan_2
+          hidden: !lambda 'return id(ac).fan_count() <= 2;'
+          state:
+            checked: !lambda 'return id(ac).fan_selected(2);'
+      - lvgl.label.update:
+          id: fan_label_3
+          text: !lambda 'return id(ac).fan_label(3);'
+      - lvgl.widget.update:
+          id: fan_3
+          hidden: !lambda 'return id(ac).fan_count() <= 3;'
+          state:
+            checked: !lambda 'return id(ac).fan_selected(3);'
+      - lvgl.label.update:
+          id: fan_label_4
+          text: !lambda 'return id(ac).fan_label(4);'
+      - lvgl.widget.update:
+          id: fan_4
+          hidden: !lambda 'return id(ac).fan_count() <= 4;'
+          state:
+            checked: !lambda 'return id(ac).fan_selected(4);'
+      - lvgl.label.update:
+          id: fan_label_5
+          text: !lambda 'return id(ac).fan_label(5);'
+      - lvgl.widget.update:
+          id: fan_5
+          hidden: !lambda 'return id(ac).fan_count() <= 5;'
+          state:
+            checked: !lambda 'return id(ac).fan_selected(5);'
+      - lvgl.widget.update:
+          id: vane_h_title
+          hidden: !lambda 'return !id(ac).show_vane_h();'
+      - lvgl.label.update:
+          id: vh_label_0
+          text: !lambda 'return id(ac).vane_h_label(0);'
+      - lvgl.widget.update:
+          id: vh_0
+          hidden: !lambda 'return !id(ac).show_vane_h() || id(ac).vane_h_count() <= 0;'
+          state:
+            checked: !lambda 'return id(ac).vane_h_selected(0);'
+      - lvgl.label.update:
+          id: vh_label_1
+          text: !lambda 'return id(ac).vane_h_label(1);'
+      - lvgl.widget.update:
+          id: vh_1
+          hidden: !lambda 'return !id(ac).show_vane_h() || id(ac).vane_h_count() <= 1;'
+          state:
+            checked: !lambda 'return id(ac).vane_h_selected(1);'
+      - lvgl.label.update:
+          id: vh_label_2
+          text: !lambda 'return id(ac).vane_h_label(2);'
+      - lvgl.widget.update:
+          id: vh_2
+          hidden: !lambda 'return !id(ac).show_vane_h() || id(ac).vane_h_count() <= 2;'
+          state:
+            checked: !lambda 'return id(ac).vane_h_selected(2);'
+      - lvgl.label.update:
+          id: vh_label_3
+          text: !lambda 'return id(ac).vane_h_label(3);'
+      - lvgl.widget.update:
+          id: vh_3
+          hidden: !lambda 'return !id(ac).show_vane_h() || id(ac).vane_h_count() <= 3;'
+          state:
+            checked: !lambda 'return id(ac).vane_h_selected(3);'
+      - lvgl.label.update:
+          id: vh_label_4
+          text: !lambda 'return id(ac).vane_h_label(4);'
+      - lvgl.widget.update:
+          id: vh_4
+          hidden: !lambda 'return !id(ac).show_vane_h() || id(ac).vane_h_count() <= 4;'
+          state:
+            checked: !lambda 'return id(ac).vane_h_selected(4);'
+      - lvgl.label.update:
+          id: vh_label_5
+          text: !lambda 'return id(ac).vane_h_label(5);'
+      - lvgl.widget.update:
+          id: vh_5
+          hidden: !lambda 'return !id(ac).show_vane_h() || id(ac).vane_h_count() <= 5;'
+          state:
+            checked: !lambda 'return id(ac).vane_h_selected(5);'
+      - lvgl.label.update:
+          id: vh_label_6
+          text: !lambda 'return id(ac).vane_h_label(6);'
+      - lvgl.widget.update:
+          id: vh_6
+          hidden: !lambda 'return !id(ac).show_vane_h() || id(ac).vane_h_count() <= 6;'
+          state:
+            checked: !lambda 'return id(ac).vane_h_selected(6);'
+      - lvgl.label.update:
+          id: vh_label_7
+          text: !lambda 'return id(ac).vane_h_label(7);'
+      - lvgl.widget.update:
+          id: vh_7
+          hidden: !lambda 'return !id(ac).show_vane_h() || id(ac).vane_h_count() <= 7;'
+          state:
+            checked: !lambda 'return id(ac).vane_h_selected(7);'
+      - lvgl.widget.update:
+          id: vane_v_title
+          hidden: !lambda 'return !id(ac).show_vane_v();'
+      - lvgl.label.update:
+          id: vv_label_0
+          text: !lambda 'return id(ac).vane_v_label(0);'
+      - lvgl.widget.update:
+          id: vv_0
+          hidden: !lambda 'return !id(ac).show_vane_v() || id(ac).vane_v_count() <= 0;'
+          state:
+            checked: !lambda 'return id(ac).vane_v_selected(0);'
+      - lvgl.label.update:
+          id: vv_label_1
+          text: !lambda 'return id(ac).vane_v_label(1);'
+      - lvgl.widget.update:
+          id: vv_1
+          hidden: !lambda 'return !id(ac).show_vane_v() || id(ac).vane_v_count() <= 1;'
+          state:
+            checked: !lambda 'return id(ac).vane_v_selected(1);'
+      - lvgl.label.update:
+          id: vv_label_2
+          text: !lambda 'return id(ac).vane_v_label(2);'
+      - lvgl.widget.update:
+          id: vv_2
+          hidden: !lambda 'return !id(ac).show_vane_v() || id(ac).vane_v_count() <= 2;'
+          state:
+            checked: !lambda 'return id(ac).vane_v_selected(2);'
+      - lvgl.label.update:
+          id: vv_label_3
+          text: !lambda 'return id(ac).vane_v_label(3);'
+      - lvgl.widget.update:
+          id: vv_3
+          hidden: !lambda 'return !id(ac).show_vane_v() || id(ac).vane_v_count() <= 3;'
+          state:
+            checked: !lambda 'return id(ac).vane_v_selected(3);'
+      - lvgl.label.update:
+          id: vv_label_4
+          text: !lambda 'return id(ac).vane_v_label(4);'
+      - lvgl.widget.update:
+          id: vv_4
+          hidden: !lambda 'return !id(ac).show_vane_v() || id(ac).vane_v_count() <= 4;'
+          state:
+            checked: !lambda 'return id(ac).vane_v_selected(4);'
+      - lvgl.label.update:
+          id: vv_label_5
+          text: !lambda 'return id(ac).vane_v_label(5);'
+      - lvgl.widget.update:
+          id: vv_5
+          hidden: !lambda 'return !id(ac).show_vane_v() || id(ac).vane_v_count() <= 5;'
+          state:
+            checked: !lambda 'return id(ac).vane_v_selected(5);'
+      - lvgl.label.update:
+          id: vv_label_6
+          text: !lambda 'return id(ac).vane_v_label(6);'
+      - lvgl.widget.update:
+          id: vv_6
+          hidden: !lambda 'return !id(ac).show_vane_v() || id(ac).vane_v_count() <= 6;'
+          state:
+            checked: !lambda 'return id(ac).vane_v_selected(6);'
