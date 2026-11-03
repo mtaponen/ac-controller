@@ -1,3 +1,5 @@
 secrets.yaml
 .esphome/
 .venv/
+__pycache__/
+*.pyc
