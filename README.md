@@ -54,6 +54,17 @@ If all three tries fail, the setup hotspot comes back with the form filled in. P
 
 Opening the warning page keeps it up until RESET or CANCEL.
 
+## Flash the release
+
+Version 0.0.1 is a ready-made firmware file. Download `firmware.factory.bin` from the [v0.0.1 release](https://github.com/mtaponen/ac-controller/releases/tag/v0.0.1). Plug the panel into the USB port on the bottom edge. The port is `/dev/cu.usbserial-…` and the number can change; `ls /dev/cu.usbserial*` shows it.
+
+```sh
+python3 -m pip install esptool
+python3 -m esptool --chip esp32s3 --port /dev/cu.usbserial-310 write-flash 0x0 firmware.factory.bin
+```
+
+Replace the port with the one from `ls`. Saved Wi-Fi and MelCloud details stay across this flash, as they do for a normal reflash.
+
 ## Rebuild and flash
 
 A change to `panel.yaml` takes effect on the next flash. Saved Wi-Fi and MelCloud details stay across that flash.
