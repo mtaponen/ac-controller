@@ -67,3 +67,7 @@ To upload a binary that is already built:
 ## Display driver
 
 `components/mipi_rgb` is a local copy of ESPHome’s RGB panel driver. That copy keeps ESPHome’s license, in `components/mipi_rgb/LICENSE`. The rest of this project is under the MIT license in `LICENSE`. The driver keeps a larger slice of the picture in internal memory and does not restart the video stream on every refresh, which stops the screen flashing when Wi-Fi uses the same memory bus. After an ESPHome upgrade, compare that directory with the new package and keep those two changes.
+
+## Backplate
+
+Backplate is not yet tested.
