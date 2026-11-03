@@ -4,6 +4,7 @@
 #include "esphome/components/network/util.h"
 #include "esphome/core/hal.h"
 #include "esphome/core/log.h"
+#include "esphome/core/preferences.h"
 
 #include <ArduinoJson.h>
 #include <esp_crt_bundle.h>
@@ -22,6 +23,13 @@ namespace esphome {
 namespace melcloud {
 
 static const char *const TAG = "melcloud";
+static const uint32_t ACCOUNT_KEY = 0x4D454C31;
+
+struct StoredAccount {
+  char email[96];
+  char password[64];
+  char device_id[24];
+};
 static const char *const BASE = "https://app.melcloud.com/Mitsubishi.Wifi.Client";
 static const size_t MAX_BODY = 196608;
 static const uint32_t POLL_INTERVAL_MS = 5 * 60 * 1000;
@@ -136,13 +144,68 @@ static std::string one_decimal(float value) {
   return buffer;
 }
 
+void MelCloud::load_credentials_() {
+  auto pref = global_preferences->make_preference<StoredAccount>(ACCOUNT_KEY, true);
+  StoredAccount stored{};
+  if (!pref.load(&stored)) {
+    ESP_LOGI(TAG, "No saved MelCloud account");
+    return;
+  }
+  stored.email[sizeof(stored.email) - 1] = '\0';
+  stored.password[sizeof(stored.password) - 1] = '\0';
+  stored.device_id[sizeof(stored.device_id) - 1] = '\0';
+  this->email_ = stored.email;
+  this->password_ = stored.password;
+  this->wanted_device_id_ = stored.device_id;
+  if (this->email_.empty()) {
+    ESP_LOGI(TAG, "No saved MelCloud account");
+    return;
+  }
+  ESP_LOGI(TAG, "Loaded MelCloud account");
+}
+
+bool MelCloud::save_credentials(const std::string &email, const std::string &password,
+                                const std::string &device_id) {
+  if (email.size() >= sizeof(StoredAccount::email) || password.size() >= sizeof(StoredAccount::password) ||
+      device_id.size() >= sizeof(StoredAccount::device_id)) {
+    return false;
+  }
+  StoredAccount stored{};
+  memcpy(stored.email, email.data(), email.size());
+  memcpy(stored.password, password.data(), password.size());
+  memcpy(stored.device_id, device_id.data(), device_id.size());
+  auto pref = global_preferences->make_preference<StoredAccount>(ACCOUNT_KEY, true);
+  if (!pref.save(&stored)) {
+    return false;
+  }
+  global_preferences->sync();
+  this->email_ = email;
+  this->password_ = password;
+  this->wanted_device_id_ = device_id;
+  {
+    std::lock_guard<std::mutex> lock(this->mu_);
+    this->device_ready_ = false;
+  }
+  this->token_.clear();
+  return true;
+}
+
+bool MelCloud::has_device() const {
+  std::lock_guard<std::mutex> lock(this->mu_);
+  return this->device_ready_;
+}
+
+void MelCloud::kick_link() { this->next_attempt_ms_ = 0; }
+
 void MelCloud::setup() {
+  this->load_credentials_();
   xTaskCreatePinnedToCore(MelCloud::task_thunk_, "melcloud", 16384, this, 4, nullptr, 0);
 }
 
 void MelCloud::dump_config() {
   ESP_LOGCONFIG(TAG, "MELCloud:");
   ESP_LOGCONFIG(TAG, "  TLS certificate check: yes");
+  ESP_LOGCONFIG(TAG, "  Account: %s", this->email_.empty() ? "not set" : "saved");
   if (!this->wanted_device_id_.empty()) {
     ESP_LOGCONFIG(TAG, "  Pinned device: %s", this->wanted_device_id_.c_str());
   }
@@ -161,6 +224,11 @@ void MelCloud::task_loop_() {
         this->shown_.online = false;
         this->revert_pending_();
       }
+      // The 5-minute poll timer belongs to the last live reading. A
+      // restored network should read MelCloud on the next loop.
+      this->next_poll_ms_ = 0;
+    } else if (this->email_.empty() || this->password_.empty()) {
+      // The setup page stores an account before the first login.
     } else if (this->token_.empty()) {
       if (!this->login_blocked_ && millis() >= this->next_attempt_ms_) {
         this->login_();
@@ -373,6 +441,7 @@ bool MelCloud::list_devices_() {
     this->vane_v_enabled_ = !hide && device["ModelSupportsVaneVertical"].as<bool>();
     this->swing_ = device["SwingFunction"].as<bool>();
     this->caps_ready_ = true;
+    this->device_ready_ = true;
     this->rebuild_options_();
   }
   ESP_LOGI(TAG, "Using %s (device %s)", this->device_name_.c_str(), this->device_id_.c_str());
@@ -746,15 +815,18 @@ bool MelCloud::has_state() const {
 
 std::string MelCloud::mode_line() const {
   std::lock_guard<std::mutex> lock(this->mu_);
-  if (!this->shown_.has_state) {
-    return "Connecting";
+  if (this->status_ != LinkStatus::LIVE || !this->shown_.has_state) {
+    if (!network::is_connected()) {
+      return "Connecting: Wifi";
+    }
+    return "Connecting: MelCloud";
   }
   return mode_word_(this->shown_.mode);
 }
 
 std::string MelCloud::setpoint_text() const {
   std::lock_guard<std::mutex> lock(this->mu_);
-  if (!this->shown_.has_state) {
+  if (this->status_ != LinkStatus::LIVE || !this->shown_.has_state) {
     return "--";
   }
   return one_decimal(this->shown_.set_temp);
@@ -762,7 +834,7 @@ std::string MelCloud::setpoint_text() const {
 
 std::string MelCloud::room_text() const {
   std::lock_guard<std::mutex> lock(this->mu_);
-  if (!this->shown_.has_state) {
+  if (this->status_ != LinkStatus::LIVE || !this->shown_.has_state) {
     return "Room --";
   }
   return "Room " + one_decimal(this->shown_.room);
@@ -975,7 +1047,7 @@ std::string MelCloud::status_text() const {
       return fallback;
     }
     case LinkStatus::OFFLINE:
-      return "Offline";
+      return "";
     case LinkStatus::LOGIN_FAILED:
       return "Login failed";
     case LinkStatus::CAPTCHA:

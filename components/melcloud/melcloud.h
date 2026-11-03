@@ -11,9 +11,12 @@ namespace melcloud {
 
 class MelCloud : public Component {
  public:
-  void set_email(const std::string &email) { this->email_ = email; }
-  void set_password(const std::string &password) { this->password_ = password; }
-  void set_device_id(const std::string &device_id) { this->wanted_device_id_ = device_id; }
+  bool save_credentials(const std::string &email, const std::string &password, const std::string &device_id);
+  const std::string &email() const { return this->email_; }
+  const std::string &password() const { return this->password_; }
+  const std::string &wanted_device_id() const { return this->wanted_device_id_; }
+  bool has_device() const;
+  void kick_link();
 
   void setup() override;
   void loop() override {}
@@ -117,6 +120,7 @@ class MelCloud : public Component {
     NO_DEVICE,
   };
 
+  void load_credentials_();
   void task_loop_();
   static void task_thunk_(void *param);
   bool login_();
@@ -165,6 +169,7 @@ class MelCloud : public Component {
   uint32_t next_write_ms_{0};
   uint32_t next_attempt_ms_{0};
   bool login_blocked_{false};
+  bool device_ready_{false};
   mutable std::mutex mu_;
 };
 
