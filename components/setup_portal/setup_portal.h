@@ -17,6 +17,7 @@ class SetupPortal : public AsyncWebHandler, public Component {
   ~SetupPortal() override;
 
   void set_melcloud(melcloud::MelCloud *melcloud) { this->melcloud_ = melcloud; }
+  void factory_reset();
 
   void setup() override;
   void loop() override;
@@ -27,7 +28,6 @@ class SetupPortal : public AsyncWebHandler, public Component {
   void handleRequest(AsyncWebServerRequest *request) override;
 
  protected:
-  void watch_button_();
   void load_state_();
   void save_state_();
   void adopt_wifi_saved_();

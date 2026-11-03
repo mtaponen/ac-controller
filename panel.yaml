@@ -43,7 +43,22 @@ melcloud:
   id: ac
 
 setup_portal:
+  id: portal
   melcloud_id: ac
+
+globals:
+  - id: reset_taps
+    type: int
+    restore_value: no
+    initial_value: "0"
+  - id: reset_window_ms
+    type: uint32_t
+    restore_value: no
+    initial_value: "0"
+  - id: reset_until_ms
+    type: uint32_t
+    restore_value: no
+    initial_value: "0"
 
 output:
   - platform: ledc
@@ -222,6 +237,30 @@ lvgl:
                     lambda: 'return id(ac).has_live_state();'
                   then:
                     - lvgl.page.show: settings_page
+                  else:
+                    # Five taps inside 10 seconds, while the label says
+                    # Connecting, open settings and reveal Reset.
+                    - lambda: |-
+                        const uint32_t now = millis();
+                        if (id(reset_taps) <= 0 || now - id(reset_window_ms) > 10000) {
+                          id(reset_taps) = 1;
+                          id(reset_window_ms) = now;
+                          return;
+                        }
+                        id(reset_taps) += 1;
+                        if (id(reset_taps) >= 5) {
+                          id(reset_taps) = -1;
+                          id(reset_until_ms) = now + 30000;
+                        }
+                    - if:
+                        condition:
+                          lambda: 'return id(reset_taps) < 0;'
+                        then:
+                          - lambda: 'id(reset_taps) = 0;'
+                          - lvgl.widget.update:
+                              id: reset_button
+                              hidden: false
+                          - lvgl.page.show: settings_page
         - obj:
             id: status_row
             align: TOP_MID
@@ -429,6 +468,77 @@ lvgl:
             text: "http://192.168.4.1"
             text_font: font_mode
             text_color: 0xF4F7FB
+    - id: reset_page
+      bg_color: 0x101418
+      widgets:
+        - label:
+            align: TOP_MID
+            y: 72
+            text: "Warning:"
+            text_font: font_mode
+            text_color: 0xF4F7FB
+        - label:
+            align: TOP_MID
+            y: 140
+            width: 420
+            text_align: CENTER
+            long_mode: WRAP
+            text: "Selecting RESET below will reset this device to factory settings and remove connection details"
+            text_font: font_ui
+            text_color: 0xF4F7FB
+        - button:
+            id: confirm_reset
+            x: 24
+            y: 380
+            width: 200
+            height: 56
+            radius: 12
+            bg_color: 0xC62828
+            border_width: 0
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+            widgets:
+              - label:
+                  text: "RESET"
+                  text_align: CENTER
+                  text_font: font_ui
+            on_click:
+              - lambda: 'id(portal).factory_reset();'
+        - button:
+            id: confirm_cancel
+            x: 256
+            y: 380
+            width: 200
+            height: 56
+            radius: 12
+            bg_color: 0x1F6FEB
+            border_width: 0
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+            widgets:
+              - label:
+                  text: "CANCEL"
+                  text_align: CENTER
+                  text_font: font_ui
+            on_click:
+              - lambda: |-
+                  id(reset_until_ms) = millis() + 30000;
+              - lvgl.widget.update:
+                  id: reset_button
+                  hidden: false
+              - lvgl.page.show: settings_page
     - id: settings_page
       bg_color: 0x101418
       widgets:
@@ -456,6 +566,31 @@ lvgl:
                   text_font: font_ui
             on_click:
               - script.execute: settings_back
+        - button:
+            id: reset_button
+            x: 358
+            y: 6
+            width: 110
+            height: 40
+            radius: 12
+            bg_color: 0xC62828
+            border_width: 0
+            pad_all: 0
+            hidden: true
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: row
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+            widgets:
+              - label:
+                  text: "Reset"
+                  text_align: CENTER
+                  text_font: font_ui
+            on_click:
+              - lvgl.page.show: reset_page
         - label:
             text: "Mode"
             x: 16
@@ -1546,8 +1681,27 @@ interval:
       - if:
           condition:
             and:
+              - lambda: 'return id(reset_until_ms) != 0;'
+              - not:
+                  lvgl.page.is_showing: reset_page
+              - lambda: 'return static_cast<int32_t>(millis() - id(reset_until_ms)) >= 0;'
+          then:
+            - lambda: 'id(reset_until_ms) = 0;'
+            - lvgl.widget.update:
+                id: reset_button
+                hidden: true
+            - if:
+                condition:
+                  and:
+                    - lvgl.page.is_showing: settings_page
+                    - lambda: 'return !id(ac).has_live_state();'
+                then:
+                  - lvgl.page.show: main_page
+      - if:
+          condition:
+            and:
               - lvgl.page.is_showing: settings_page
-              - lambda: 'return !id(ac).has_live_state();'
+              - lambda: 'return !id(ac).has_live_state() && id(reset_until_ms) == 0;'
           then:
             - lvgl.page.show: main_page
       - lvgl.label.update:

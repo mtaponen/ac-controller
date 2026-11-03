@@ -10,7 +10,6 @@
 #include "esphome/core/preferences.h"
 
 #include <nvs.h>
-#include <driver/gpio.h>
 #include <esp_system.h>
 
 #include <cstring>
@@ -19,8 +18,6 @@ namespace esphome {
 namespace setup_portal {
 
 static const char *const TAG = "setup_portal";
-static const uint32_t BUTTON_WATCH_MS = 2000;
-static const uint32_t BUTTON_HOLD_MS = 200;
 static const uint32_t PORTAL_KEY = 0x41504354;
 static const uint32_t WIFI_STA_KEY = 88491487UL;
 static const uint32_t ATTEMPT_MS = 10000;
@@ -187,55 +184,14 @@ void SetupPortal::watch_attempts_() {
   }
 }
 
-void SetupPortal::watch_button_() {
-  if (esp_reset_reason() == ESP_RST_SW) {
-    ESP_LOGI(TAG, "Software reboot, button watch skipped");
-    return;
-  }
-
-  gpio_config_t cfg = {};
-  cfg.pin_bit_mask = 1ULL << GPIO_NUM_0;
-  cfg.mode = GPIO_MODE_INPUT;
-  cfg.pull_up_en = GPIO_PULLUP_ENABLE;
-  cfg.pull_down_en = GPIO_PULLDOWN_DISABLE;
-  cfg.intr_type = GPIO_INTR_DISABLE;
-  if (gpio_config(&cfg) != ESP_OK) {
-    ESP_LOGE(TAG, "GPIO0 could not be read. Saved info kept.");
-    return;
-  }
-
-  ESP_LOGI(TAG, "Watching GPIO0 for 2s. Hold the button beside USB to clear saved info.");
-  uint32_t low_since = 0;
-  const uint32_t started = millis();
-  bool held = false;
-  while (millis() - started < BUTTON_WATCH_MS) {
-    if (gpio_get_level(GPIO_NUM_0) == 0) {
-      if (low_since == 0) {
-        low_since = millis();
-      }
-      if (millis() - low_since >= BUTTON_HOLD_MS) {
-        held = true;
-        break;
-      }
-    } else {
-      low_since = 0;
-    }
-    delay(10);
-  }
-
-  if (!held) {
-    ESP_LOGI(TAG, "GPIO0 stayed high. Saved Wi-Fi and MelCloud info kept.");
-    return;
-  }
-
-  ESP_LOGW(TAG, "GPIO0 held. Clearing saved Wi-Fi and MelCloud info.");
+void SetupPortal::factory_reset() {
+  ESP_LOGW(TAG, "Clearing saved Wi-Fi and MelCloud info.");
   global_preferences->reset();
   delay(100);
   App.safe_reboot();
 }
 
 void SetupPortal::setup() {
-  this->watch_button_();
   this->load_state_();
   ESP_LOGI(TAG, "Boot phase %u, reset reason %d", static_cast<unsigned>(this->phase_),
            static_cast<int>(esp_reset_reason()));
@@ -289,7 +245,6 @@ void SetupPortal::loop() {
 void SetupPortal::dump_config() {
   ESP_LOGCONFIG(TAG, "Setup portal:");
   ESP_LOGCONFIG(TAG, "  Hotspot: ac-controller");
-  ESP_LOGCONFIG(TAG, "  Button: hold GPIO0 during the first 2s of a power-on");
 }
 
 float SetupPortal::get_setup_priority() const { return setup_priority::HARDWARE; }

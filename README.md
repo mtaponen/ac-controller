@@ -41,19 +41,18 @@ Save. The panel tries the home Wi-Fi and then MelCloud three times, about 10 sec
 
 When a try reaches the indoor unit, the heat-pump screen stays up. A later dropout, or a power-on after that, keeps retrying the saved network and does not open the setup hotspot. During a dropout the screen shows `Connecting: Wifi` or `Connecting: MelCloud` and drops the last temperatures until a new reading arrives.
 
-If all three tries fail, the setup hotspot comes back with the form filled in. Powering the panel on after that, before any try has reached the indoor unit, opens the hotspot again. A power cut during the three tries starts those tries over. The button clear, below, wipes the saved details.
+If all three tries fail, the setup hotspot comes back with the form filled in. Powering the panel on after that, before any try has reached the indoor unit, opens the hotspot again. A power cut during the three tries starts those tries over. The clear steps below wipe the saved details.
 
 ## Clear the saved details
 
-The button beside the USB port is the chip’s reset / boot button. Hold it only after the panel has started, not while you press reset.
+The button beside the USB port does not clear the saved details. The panel cannot read it.
 
-1. Power the panel on, or press the button once and release it, so the firmware starts.
-2. During the first 2 seconds, hold the button. The screen stays blank for those 2 seconds on every power-on.
-3. The panel clears the saved Wi-Fi and MelCloud details, restarts, and shows `ac-controller` again.
+1. Power the panel on and wait until the top button says `Connecting: Wifi` or `Connecting: MelCloud`.
+2. Tap that button five times within 10 seconds. Settings opens, and a red Reset button appears on the same row as Back.
+3. Tap Reset within 30 seconds. If that time passes, Reset disappears. While the panel is still connecting, settings closes as well.
+4. The next page says that RESET returns the panel to factory settings and removes the connection details. RESET does that, restarts, and shows `ac-controller` again. CANCEL returns to settings and gives another 30 seconds.
 
-Holding the button down while power is applied, or while the reset press is still down, leaves the chip in the serial flasher. The screen stays blank and the saved details are not cleared. Release the button and power the panel on again, then hold it during the first 2 seconds.
-
-Every power-on waits those 2 seconds before the picture starts, so the button can be read before the screen takes that pin. A restart after Save does not wait.
+Back leaves settings and leaves a running 30 seconds as it is. Opening the warning page keeps it up until RESET or CANCEL.
 
 ## Rebuild and flash
 
