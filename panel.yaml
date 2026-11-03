@@ -83,6 +83,17 @@ touchscreen:
     transform:
       mirror_x: true
       mirror_y: true
+    # Wake on release so the first tap only restores brightness and does
+    # not also activate a button underneath.
+    on_release:
+      - if:
+          condition: lvgl.is_paused
+          then:
+            - lvgl.resume:
+            - lvgl.widget.redraw:
+            - light.turn_on:
+                id: backlight
+                brightness: 100%
 
 font:
   - file: gfonts://Roboto
@@ -133,6 +144,23 @@ lvgl:
   buffer_size: 25%
   bg_color: 0x101418
   text_color: 0xF4F7FB
+  # Idle clock resets on each touch. After 30s, leave settings if it
+  # is open and let that frame reach the panel. Pause freezes whatever
+  # is already on screen, so the dim happens only after the main page
+  # has been drawn.
+  on_idle:
+    timeout: 30s
+    then:
+      - if:
+          condition:
+            lvgl.page.is_showing: settings_page
+          then:
+            - script.execute: settings_back
+            - delay: 400ms
+      - light.turn_on:
+          id: backlight
+          brightness: 65%
+      - lvgl.pause:
   pages:
     - id: main_page
       bg_color: 0x101418
@@ -368,7 +396,7 @@ lvgl:
                   text_align: CENTER
                   text_font: font_ui
             on_click:
-              - lvgl.page.show: main_page
+              - script.execute: settings_back
         - label:
             text: "Mode"
             x: 16
@@ -1370,6 +1398,11 @@ lvgl:
             on_click:
               - lambda: |-
                   id(ac).select_vane_v(6);
+
+script:
+  - id: settings_back
+    then:
+      - lvgl.page.show: main_page
 
 interval:
   - interval: 500ms
