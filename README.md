@@ -6,6 +6,10 @@ The panel shows the current mode, fan, setpoint, and room temperature. A change 
 
 There is no Home Assistant API or over-the-air update. Wi-Fi and the MelCloud account are entered on the panel and kept in the chip’s flash. A normal reflash leaves them there.
 
+![Main screen](Main-screen.jpg)
+
+![Settings](Settings.jpg)
+
 ## One-time setup
 
 Use Python 3.13. ESPHome 2026.4.0 and 2026.4.1 boot-loop this board; this project uses 2026.10.1.
