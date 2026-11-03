@@ -85,6 +85,8 @@ class MelCloud : public Component {
   struct Pending {
     bool temp{false};
     float temp_value{0};
+    bool power{false};
+    bool power_value{false};
     bool mode{false};
     int mode_value{1};
     bool fan{false};

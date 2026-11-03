@@ -133,14 +133,14 @@ font:
   - file: https://github.com/google/material-design-icons/raw/master/font/MaterialIcons-Regular.ttf
     id: font_icon
     size: 22
-    glyphs: "\uE430\uEB3B\uE863\uE798\uE5C8\uEA18\uE0B6"
+    glyphs: "\uE430\uEB3B\uE863\uE798\uE5C8\uEA18\uE0B6\uE8AC"
     extras:
       - file: https://github.com/Templarian/MaterialDesign-Webfont/raw/v7.4.47/fonts/materialdesignicons-webfont.ttf
         glyphs: "\U000F0210"
   - file: https://github.com/google/material-design-icons/raw/master/font/MaterialIcons-Regular.ttf
     id: font_mode_icon
     size: 44
-    glyphs: "\uE430\uEB3B\uE863\uE798"
+    glyphs: "\uE430\uEB3B\uE863\uE798\uE8AC"
     extras:
       - file: https://github.com/Templarian/MaterialDesign-Webfont/raw/v7.4.47/fonts/materialdesignicons-webfont.ttf
         glyphs: "\U000F0210"
@@ -464,9 +464,9 @@ lvgl:
             text_color: 0x93A0B0
         - button:
             id: mode_heat
-            x: 12
+            x: 8
             y: 84
-            width: 146
+            width: 86
             height: 52
             radius: 12
             checkable: true
@@ -478,33 +478,30 @@ lvgl:
             scrollable: false
             layout:
               type: flex
-              flex_flow: row
+              flex_flow: column
               flex_align_main: center
               flex_align_cross: center
               flex_align_track: center
-              pad_column: 6
             widgets:
               - label:
-                  width: 44
-                  height: 44
+                  width: 24
+                  height: 24
                   text_align: CENTER
-                  text_font: font_mode_icon
+                  text_font: font_icon
                   text_color: 0xF5C518
                   text: "\uE430"
-                  transform_pivot_x: 50%
-                  transform_pivot_y: 50%
               - label:
                   text: "Heat"
                   text_align: CENTER
-                  text_font: font_ui
+                  text_font: font_small
             on_click:
               - lambda: |-
                   id(ac).select_mode("heat");
         - button:
-            id: mode_cool
-            x: 168
+            id: mode_dry
+            x: 102
             y: 84
-            width: 146
+            width: 86
             height: 52
             radius: 12
             checkable: true
@@ -516,33 +513,65 @@ lvgl:
             scrollable: false
             layout:
               type: flex
-              flex_flow: row
+              flex_flow: column
               flex_align_main: center
               flex_align_cross: center
               flex_align_track: center
-              pad_column: 6
             widgets:
               - label:
-                  width: 44
-                  height: 44
+                  width: 24
+                  height: 24
                   text_align: CENTER
-                  text_font: font_mode_icon
+                  text_font: font_icon
+                  text_color: 0x7ECBFF
+                  text: "\uE798"
+              - label:
+                  text: "Dry"
+                  text_align: CENTER
+                  text_font: font_small
+            on_click:
+              - lambda: |-
+                  id(ac).select_mode("dry");
+        - button:
+            id: mode_cool
+            x: 196
+            y: 84
+            width: 86
+            height: 52
+            radius: 12
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: column
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+            widgets:
+              - label:
+                  width: 24
+                  height: 24
+                  text_align: CENTER
+                  text_font: font_icon
                   text_color: 0x7ECBFF
                   text: "\uEB3B"
-                  transform_pivot_x: 50%
-                  transform_pivot_y: 50%
               - label:
                   text: "Cool"
                   text_align: CENTER
-                  text_font: font_ui
+                  text_font: font_small
             on_click:
               - lambda: |-
                   id(ac).select_mode("cool");
         - button:
             id: mode_auto
-            x: 324
+            x: 290
             y: 84
-            width: 146
+            width: 86
             height: 52
             radius: 12
             checkable: true
@@ -554,28 +583,60 @@ lvgl:
             scrollable: false
             layout:
               type: flex
-              flex_flow: row
+              flex_flow: column
               flex_align_main: center
               flex_align_cross: center
               flex_align_track: center
-              pad_column: 6
             widgets:
               - label:
-                  width: 44
-                  height: 44
+                  width: 24
+                  height: 24
                   text_align: CENTER
-                  text_font: font_mode_icon
+                  text_font: font_icon
                   text_color: 0xB7C0CA
                   text: "\uE863"
-                  transform_pivot_x: 50%
-                  transform_pivot_y: 50%
               - label:
                   text: "Auto"
                   text_align: CENTER
-                  text_font: font_ui
+                  text_font: font_small
             on_click:
               - lambda: |-
                   id(ac).select_mode("auto");
+        - button:
+            id: mode_off
+            x: 384
+            y: 84
+            width: 86
+            height: 52
+            radius: 12
+            checkable: true
+            bg_color: 0x1A2330
+            border_width: 0
+            checked:
+              bg_color: 0x1F6FEB
+            pad_all: 0
+            scrollable: false
+            layout:
+              type: flex
+              flex_flow: column
+              flex_align_main: center
+              flex_align_cross: center
+              flex_align_track: center
+            widgets:
+              - label:
+                  width: 24
+                  height: 24
+                  text_align: CENTER
+                  text_font: font_icon
+                  text_color: 0xB7C0CA
+                  text: "\uE8AC"
+              - label:
+                  text: "Off"
+                  text_align: CENTER
+                  text_font: font_small
+            on_click:
+              - lambda: |-
+                  id(ac).select_mode("off");
         - label:
             text: "Fan"
             x: 16
@@ -1574,6 +1635,10 @@ interval:
           state:
             checked: !lambda 'return id(ac).mode_is("heat");'
       - lvgl.widget.update:
+          id: mode_dry
+          state:
+            checked: !lambda 'return id(ac).mode_is("dry");'
+      - lvgl.widget.update:
           id: mode_cool
           state:
             checked: !lambda 'return id(ac).mode_is("cool");'
@@ -1581,6 +1646,10 @@ interval:
           id: mode_auto
           state:
             checked: !lambda 'return id(ac).mode_is("auto");'
+      - lvgl.widget.update:
+          id: mode_off
+          state:
+            checked: !lambda 'return id(ac).mode_is("off");'
       - lvgl.label.update:
           id: fan_label_0
           text: !lambda 'return id(ac).fan_label(0);'

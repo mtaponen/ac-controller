@@ -35,6 +35,7 @@ static const size_t MAX_BODY = 196608;
 static const uint32_t POLL_INTERVAL_MS = 5 * 60 * 1000;
 static const uint32_t POLL_RETRY_MS = 15 * 1000;
 
+static const int FLAG_POWER = 0x01;
 static const int FLAG_MODE = 0x02;
 static const int FLAG_TEMPERATURE = 0x04;
 static const int FLAG_FAN = 0x08;
@@ -260,12 +261,13 @@ void MelCloud::task_loop_() {
 }
 
 bool MelCloud::any_pending_unlocked_() const {
-  return this->pending_.temp || this->pending_.mode || this->pending_.fan || this->pending_.vane_h ||
-         this->pending_.vane_v;
+  return this->pending_.power || this->pending_.temp || this->pending_.mode || this->pending_.fan ||
+         this->pending_.vane_h || this->pending_.vane_v;
 }
 
 void MelCloud::revert_pending_() {
   this->pending_ = {};
+  this->shown_.power = this->confirmed_.power;
   this->shown_.set_temp = this->confirmed_.set_temp;
   this->shown_.mode = this->confirmed_.mode;
   this->shown_.fan = this->confirmed_.fan;
@@ -479,7 +481,13 @@ bool MelCloud::write_one_() {
     std::lock_guard<std::mutex> lock(this->mu_);
     pending = this->pending_;
   }
-  if (pending.temp) {
+  if (pending.power && !pending.power_value) {
+    flag = FLAG_POWER;
+  } else if (pending.power && pending.mode) {
+    flag = FLAG_POWER | FLAG_MODE;
+  } else if (pending.power) {
+    flag = FLAG_POWER;
+  } else if (pending.temp) {
     flag = FLAG_TEMPERATURE;
   } else if (pending.mode) {
     flag = FLAG_MODE;
@@ -501,9 +509,12 @@ bool MelCloud::write_one_() {
     return false;
   }
   JsonObject state = doc.as<JsonObject>();
+  if ((flag & FLAG_POWER) != 0) {
+    state["Power"] = pending.power_value;
+  }
   if (flag == FLAG_TEMPERATURE) {
     state["SetTemperature"] = round_to_step(pending.temp_value, this->limits_.step);
-  } else if (flag == FLAG_MODE) {
+  } else if ((flag & FLAG_MODE) != 0) {
     state["OperationMode"] = pending.mode_value;
   } else if (flag == FLAG_FAN) {
     state["SetFanSpeed"] = pending.fan_value;
@@ -537,10 +548,13 @@ bool MelCloud::write_one_() {
   uint32_t hold_poll_until = 0;
   {
     std::lock_guard<std::mutex> lock(this->mu_);
+    if ((flag & FLAG_POWER) != 0 && this->pending_.power && this->pending_.power_value == pending.power_value) {
+      this->pending_.power = false;
+    }
     if (flag == FLAG_TEMPERATURE && this->pending_.temp &&
         std::fabs(this->pending_.temp_value - pending.temp_value) < 0.01f) {
       this->pending_.temp = false;
-    } else if (flag == FLAG_MODE && this->pending_.mode && this->pending_.mode_value == pending.mode_value) {
+    } else if ((flag & FLAG_MODE) != 0 && this->pending_.mode && this->pending_.mode_value == pending.mode_value) {
       this->pending_.mode = false;
     } else if (flag == FLAG_FAN && this->pending_.fan && this->pending_.fan_value == pending.fan_value) {
       this->pending_.fan = false;
@@ -598,7 +612,9 @@ void MelCloud::ingest_state_(const std::string &json, bool from_server) {
     this->status_ = LinkStatus::LIVE;
     this->shown_.has_state = true;
     this->shown_.online = true;
-    this->shown_.power = reading.power;
+    if (!this->pending_.power) {
+      this->shown_.power = reading.power;
+    }
     this->shown_.room = reading.room;
     if (!this->pending_.temp) {
       this->shown_.set_temp = reading.set_temp;
@@ -690,6 +706,9 @@ int MelCloud::mode_code_(const char *mode) {
   if (mode == nullptr) {
     return 1;
   }
+  if (std::strcmp(mode, "dry") == 0) {
+    return 2;
+  }
   if (std::strcmp(mode, "cool") == 0) {
     return 3;
   }
@@ -738,21 +757,47 @@ void MelCloud::adjust_setpoint(int steps) {
 }
 
 void MelCloud::select_mode(const char *mode) {
-  const int code = mode_code_(mode);
   std::lock_guard<std::mutex> lock(this->mu_);
-  if (!this->shown_.online || !this->shown_.has_state) {
+  if (!this->shown_.online || !this->shown_.has_state || mode == nullptr) {
     return;
   }
-  if (code == this->confirmed_.mode) {
+  if (std::strcmp(mode, "off") == 0) {
+    if (!this->shown_.power && !(this->pending_.power && this->pending_.power_value)) {
+      this->pending_.power = false;
+      this->pending_.mode = false;
+      return;
+    }
+    this->pending_.power = true;
+    this->pending_.power_value = false;
     this->pending_.mode = false;
+    this->pending_.ready_at = millis() + 1000;
+    this->shown_.power = false;
+    return;
+  }
+
+  const int code = mode_code_(mode);
+  const bool on = this->pending_.power ? this->pending_.power_value : this->shown_.power;
+  const int current = this->pending_.mode ? this->pending_.mode_value : this->shown_.mode;
+  if (on && current == code) {
+    this->pending_.power = false;
+    this->pending_.mode = false;
+    this->shown_.power = true;
     this->shown_.mode = code;
     return;
   }
-  if (this->pending_.mode && this->pending_.mode_value == code) {
-    return;
+  if (!on) {
+    this->pending_.power = true;
+    this->pending_.power_value = true;
+    this->shown_.power = true;
+  } else {
+    this->pending_.power = false;
   }
-  this->pending_.mode = true;
-  this->pending_.mode_value = code;
+  if (current != code) {
+    this->pending_.mode = true;
+    this->pending_.mode_value = code;
+  } else {
+    this->pending_.mode = false;
+  }
   this->pending_.ready_at = millis() + 1000;
   this->shown_.mode = code;
 }
@@ -821,6 +866,9 @@ std::string MelCloud::mode_line() const {
     }
     return "Connecting: MelCloud";
   }
+  if (!this->shown_.power) {
+    return "Off";
+  }
   return mode_word_(this->shown_.mode);
 }
 
@@ -840,6 +888,7 @@ std::string MelCloud::room_text() const {
   return "Room " + one_decimal(this->shown_.room);
 }
 
+static const char *const ICON_POWER = "\uE8AC";
 static const char *const ICON_SUN = "\uE430";
 static const char *const ICON_SNOW = "\uEB3B";
 static const char *const ICON_AUTO = "\uE863";
@@ -860,6 +909,9 @@ bool MelCloud::has_live_state() const {
 
 const char *MelCloud::mode_icon() const {
   std::lock_guard<std::mutex> lock(this->mu_);
+  if (!this->shown_.power) {
+    return ICON_POWER;
+  }
   switch (this->shown_.mode) {
     case 1:
       return ICON_SUN;
@@ -878,6 +930,9 @@ const char *MelCloud::mode_icon() const {
 
 uint32_t MelCloud::mode_icon_color() const {
   std::lock_guard<std::mutex> lock(this->mu_);
+  if (!this->shown_.power) {
+    return COLOR_GREY;
+  }
   switch (this->shown_.mode) {
     case 1:
       return COLOR_HEAT;
@@ -1089,7 +1144,10 @@ int MelCloud::arc_min_unlocked_(int mode) const {
 
 bool MelCloud::mode_is(const char *mode) const {
   std::lock_guard<std::mutex> lock(this->mu_);
-  return this->shown_.mode == mode_code_(mode);
+  if (mode != nullptr && std::strcmp(mode, "off") == 0) {
+    return !this->shown_.power;
+  }
+  return this->shown_.power && this->shown_.mode == mode_code_(mode);
 }
 
 int MelCloud::fan_count() const {
