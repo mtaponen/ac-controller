@@ -15,7 +15,7 @@ python3.13 -m venv .venv
 .venv/bin/pip install 'esphome==2026.10.1'
 ```
 
-Program the board through the CH340 serial adapter, not the native USB port. After plugging it in, the port is `/dev/cu.usbserial-…` and the number can change.
+Program the board through the USB port on the bottom edge. That port is the serial adapter, so after plugging it in the device is `/dev/cu.usbserial-…` and the number can change.
 
 ```sh
 .venv/bin/esphome run panel.yaml --device /dev/cu.usbserial-310
@@ -39,20 +39,16 @@ The form asks for:
 
 Save. The panel tries the home Wi-Fi and then MelCloud three times, about 10 seconds apart. The screen says `Connecting: Wifi`, then `Connecting: MelCloud`. Show password on the form reveals what was typed, including characters such as `+`, `&`, and spaces.
 
-When a try reaches the indoor unit, the heat-pump screen stays up. A later dropout, or a power-on after that, keeps retrying the saved network and does not open the setup hotspot. During a dropout the screen shows `Connecting: Wifi` or `Connecting: MelCloud` and drops the last temperatures until a new reading arrives.
-
-If all three tries fail, the setup hotspot comes back with the form filled in. Powering the panel on after that, before any try has reached the indoor unit, opens the hotspot again. A power cut during the three tries starts those tries over. The clear steps below wipe the saved details.
+If all three tries fail, the setup hotspot comes back with the form filled in. Powering the panel on after that, before any try has reached the indoor unit, opens the hotspot again.
 
 ## Clear the saved details
-
-The button beside the USB port does not clear the saved details. The panel cannot read it.
 
 1. Power the panel on and wait until the top button says `Connecting: Wifi` or `Connecting: MelCloud`.
 2. Tap that button five times within 10 seconds. Settings opens, and a red Reset button appears on the same row as Back.
 3. Tap Reset within 30 seconds. If that time passes, Reset disappears. While the panel is still connecting, settings closes as well.
 4. The next page says that RESET returns the panel to factory settings and removes the connection details. RESET does that, restarts, and shows `ac-controller` again. CANCEL returns to settings and gives another 30 seconds.
 
-Back leaves settings and leaves a running 30 seconds as it is. Opening the warning page keeps it up until RESET or CANCEL.
+Opening the warning page keeps it up until RESET or CANCEL.
 
 ## Rebuild and flash
 
