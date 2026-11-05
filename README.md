@@ -85,4 +85,4 @@ To upload a binary that is already built:
 
 ## Backplate
 
-Backplate is not yet tested.
+The printable plate is [`enclosure/backplate.scad`](enclosure/backplate.scad). It has not been tested on the wall yet. Other snap plates, European-box mounts, and boxes are listed in [`enclosure/ALTERNATIVES.md`](enclosure/ALTERNATIVES.md), with the model pages in [`enclosure/references/README.md`](enclosure/references/README.md).
