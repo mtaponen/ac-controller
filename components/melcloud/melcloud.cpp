@@ -34,6 +34,7 @@ static const char *const BASE = "https://app.melcloud.com/Mitsubishi.Wifi.Client
 static const size_t MAX_BODY = 196608;
 static const uint32_t POLL_INTERVAL_MS = 5 * 60 * 1000;
 static const uint32_t POLL_RETRY_MS = 15 * 1000;
+static const uint32_t MENU_POLL_MIN_MS = 10 * 1000;
 
 static const int FLAG_POWER = 0x01;
 static const int FLAG_MODE = 0x02;
@@ -198,6 +199,11 @@ bool MelCloud::has_device() const {
 
 void MelCloud::kick_link() { this->next_attempt_ms_ = 0; }
 
+void MelCloud::request_refresh() {
+  std::lock_guard<std::mutex> lock(this->mu_);
+  this->poll_now_ = true;
+}
+
 void MelCloud::setup() {
   this->load_credentials_();
   xTaskCreatePinnedToCore(MelCloud::task_thunk_, "melcloud", 16384, this, 4, nullptr, 0);
@@ -240,17 +246,35 @@ void MelCloud::task_loop_() {
       }
     } else {
       bool write_due = false;
+      bool poll_now = false;
       {
         std::lock_guard<std::mutex> lock(this->mu_);
         write_due = this->any_pending_unlocked_() && millis() >= this->pending_.ready_at;
+        poll_now = this->poll_now_;
       }
       if (write_due && millis() >= this->next_write_ms_) {
+        {
+          std::lock_guard<std::mutex> lock(this->mu_);
+          this->poll_now_ = false;
+        }
         // Refresh first so a temperature write cannot send a stale fan
         // (or any other field) over a change made on another panel.
         if (this->poll_(false)) {
           this->write_one_();
         } else {
           this->next_write_ms_ = millis() + POLL_RETRY_MS;
+        }
+      } else if (!write_due && poll_now) {
+        {
+          std::lock_guard<std::mutex> lock(this->mu_);
+          this->poll_now_ = false;
+        }
+        // Opening settings asks for one reading. A failure leaves an
+        // unsent edit in place. A success inside the last 10 seconds
+        // is already on screen, so another GET is skipped.
+        const uint32_t now = millis();
+        if (!this->have_poll_ok_ || now - this->last_poll_ok_ms_ >= MENU_POLL_MIN_MS) {
+          this->poll_(false);
         }
       } else if (!write_due && millis() >= this->next_poll_ms_) {
         this->poll_(true);
@@ -470,7 +494,10 @@ bool MelCloud::poll_(bool revert_pending) {
     return false;
   }
   this->ingest_state_(result.body, true);
-  this->next_poll_ms_ = millis() + POLL_INTERVAL_MS;
+  const uint32_t now = millis();
+  this->next_poll_ms_ = now + POLL_INTERVAL_MS;
+  this->last_poll_ok_ms_ = now;
+  this->have_poll_ok_ = true;
   return true;
 }
 

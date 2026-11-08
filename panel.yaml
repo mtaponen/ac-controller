@@ -236,6 +236,9 @@ lvgl:
                   condition:
                     lambda: 'return id(ac).has_live_state();'
                   then:
+                    # Ask for a fresh reading. Settings opens on the last
+                    # one and updates when MelCloud answers.
+                    - lambda: 'id(ac).request_refresh();'
                     - lvgl.page.show: settings_page
                   else:
                     # Five taps inside 10 seconds, while the label says

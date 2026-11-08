@@ -17,6 +17,7 @@ class MelCloud : public Component {
   const std::string &wanted_device_id() const { return this->wanted_device_id_; }
   bool has_device() const;
   void kick_link();
+  void request_refresh();
 
   void setup() override;
   void loop() override {}
@@ -170,6 +171,9 @@ class MelCloud : public Component {
   uint32_t next_poll_ms_{0};
   uint32_t next_write_ms_{0};
   uint32_t next_attempt_ms_{0};
+  uint32_t last_poll_ok_ms_{0};
+  bool have_poll_ok_{false};
+  bool poll_now_{false};
   bool login_blocked_{false};
   bool device_ready_{false};
   mutable std::mutex mu_;
