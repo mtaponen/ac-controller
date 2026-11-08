@@ -148,7 +148,7 @@ font:
   - file: https://github.com/google/material-design-icons/raw/master/font/MaterialIcons-Regular.ttf
     id: font_icon
     size: 22
-    glyphs: "\uE430\uEB3B\uE863\uE798\uE5C8\uEA18\uE0B6\uE8AC"
+    glyphs: "\uE314\uE315\uE430\uEB3B\uE863\uE798\uEA18\uE8AC"
     extras:
       - file: https://github.com/Templarian/MaterialDesign-Webfont/raw/v7.4.47/fonts/materialdesignicons-webfont.ttf
         glyphs: "\U000F0210"
@@ -1042,620 +1042,607 @@ lvgl:
             on_click:
               - lambda: |-
                   id(ac).select_fan(5);
-        - label:
-            id: vane_h_title
-            text: "Horizontal"
-            x: 16
-            y: 230
-            text_font: font_ui
-            text_color: 0x93A0B0
-        - button:
-            id: vh_0
-            x: 12
-            y: 260
-            width: 110
-            height: 42
-            radius: 10
-            checkable: true
-            bg_color: 0x1A2330
+        # Positions 1–5 run left to right. Both fans hang from a point
+        # above the bars. Vertical opens from straight right toward down.
+        # Horizontal leans from left to right.
+        - obj:
+            id: vane_v_group
+            x: 8
+            y: 232
+            width: 228
+            height: 240
+            bg_opa: TRANSP
             border_width: 0
-            checked:
-              bg_color: 0x1F6FEB
             pad_all: 0
+            clickable: false
             scrollable: false
-            layout:
-              type: flex
-              flex_flow: row
-              flex_align_main: center
-              flex_align_cross: center
-              flex_align_track: center
-              pad_column: 4
+            overflow_visible: true
             widgets:
               - label:
-                  id: vh_icon_0
-                  width: 26
-                  height: 26
-                  text_align: CENTER
-                  text_font: font_icon
-                  text_color: 0xB7C0CA
-                  text: "\U000F0210"
-                  transform_pivot_x: 50%
-                  transform_pivot_y: 50%
-              - label:
-                  id: vh_label_0
-                  text: " "
-                  text_align: CENTER
-                  text_font: font_small
-            on_click:
-              - lambda: |-
-                  id(ac).select_vane_h(0);
-        - button:
-            id: vh_1
-            x: 128
-            y: 260
-            width: 110
-            height: 42
-            radius: 10
-            checkable: true
-            bg_color: 0x1A2330
-            border_width: 0
-            checked:
-              bg_color: 0x1F6FEB
-            pad_all: 0
-            scrollable: false
-            layout:
-              type: flex
-              flex_flow: row
-              flex_align_main: center
-              flex_align_cross: center
-              flex_align_track: center
-              pad_column: 4
-            widgets:
-              - label:
-                  id: vh_icon_1
-                  width: 26
-                  height: 26
-                  text_align: CENTER
-                  text_font: font_icon
-                  text_color: 0xB7C0CA
-                  text: "\U000F0210"
-                  transform_pivot_x: 50%
-                  transform_pivot_y: 50%
-              - label:
-                  id: vh_label_1
-                  text: " "
-                  text_align: CENTER
-                  text_font: font_small
-            on_click:
-              - lambda: |-
-                  id(ac).select_vane_h(1);
-        - button:
-            id: vh_2
+                  id: vane_v_title
+                  text: "Vertical"
+                  x: 0
+                  y: 0
+                  text_font: font_ui
+                  text_color: 0x93A0B0
+              - button:
+                  id: vv_auto
+                  x: 0
+                  y: 32
+                  width: 92
+                  height: 100
+                  radius: 12
+                  checkable: true
+                  bg_color: 0x1A2330
+                  border_width: 0
+                  checked:
+                    bg_color: 0x1F6FEB
+                  pad_all: 0
+                  scrollable: false
+                  layout:
+                    type: flex
+                    flex_flow: column
+                    flex_align_main: center
+                    flex_align_cross: center
+                    flex_align_track: center
+                    pad_row: 4
+                  widgets:
+                    - label:
+                        width: 26
+                        height: 26
+                        text_align: CENTER
+                        text_font: font_icon
+                        text_color: 0xB7C0CA
+                        text: "\uE863"
+                    - label:
+                        text: "Auto"
+                        text_align: CENTER
+                        text_font: font_small
+                        text_color: 0xF4F7FB
+                  on_click:
+                    - lambda: 'id(ac).select_vane_v(0);'
+              - button:
+                  id: vv_swing
+                  x: 0
+                  y: 140
+                  width: 92
+                  height: 100
+                  radius: 12
+                  checkable: true
+                  bg_color: 0x1A2330
+                  border_width: 0
+                  checked:
+                    bg_color: 0x1F6FEB
+                  pad_all: 0
+                  scrollable: false
+                  layout:
+                    type: flex
+                    flex_flow: column
+                    flex_align_main: center
+                    flex_align_cross: center
+                    flex_align_track: center
+                    pad_row: 4
+                  widgets:
+                    - label:
+                        width: 26
+                        height: 26
+                        text_align: CENTER
+                        text_font: font_icon
+                        text_color: 0xB7C0CA
+                        text: "\uEA18"
+                    - label:
+                        text: "Swing"
+                        text_align: CENTER
+                        text_font: font_small
+                        text_color: 0xF4F7FB
+                  on_click:
+                    - lambda: 'id(ac).select_vane_v(6);'
+              - obj:
+                  x: 98
+                  y: 32
+                  width: 130
+                  height: 158
+                  radius: 12
+                  bg_color: 0x1A2330
+                  bg_opa: COVER
+                  border_width: 0
+                  pad_all: 0
+                  clickable: false
+                  scrollable: false
+                  overflow_visible: true
+                  widgets:
+                    - obj:
+                        id: vv_bar_1
+                        x: 10
+                        y: 76
+                        width: 12
+                        height: 70
+                        radius: 6
+                        bg_color: 0x3A4654
+                        bg_opa: COVER
+                        border_width: 0
+                        clickable: false
+                        scrollable: false
+                        overflow_visible: true
+                        transform_pivot_x: 0%
+                        transform_pivot_y: -30
+                        transform_rotation: 277
+                    - obj:
+                        id: vv_bar_2
+                        x: 10
+                        y: 76
+                        width: 12
+                        height: 70
+                        radius: 6
+                        bg_color: 0x3A4654
+                        bg_opa: COVER
+                        border_width: 0
+                        clickable: false
+                        scrollable: false
+                        overflow_visible: true
+                        transform_pivot_x: 0%
+                        transform_pivot_y: -30
+                        transform_rotation: 293
+                    - obj:
+                        id: vv_bar_3
+                        x: 10
+                        y: 76
+                        width: 12
+                        height: 70
+                        radius: 6
+                        bg_color: 0x3A4654
+                        bg_opa: COVER
+                        border_width: 0
+                        clickable: false
+                        scrollable: false
+                        overflow_visible: true
+                        transform_pivot_x: 0%
+                        transform_pivot_y: -30
+                        transform_rotation: 309
+                    - obj:
+                        id: vv_bar_4
+                        x: 10
+                        y: 76
+                        width: 12
+                        height: 70
+                        radius: 6
+                        bg_color: 0x3A4654
+                        bg_opa: COVER
+                        border_width: 0
+                        clickable: false
+                        scrollable: false
+                        overflow_visible: true
+                        transform_pivot_x: 0%
+                        transform_pivot_y: -30
+                        transform_rotation: 325
+                    - obj:
+                        id: vv_bar_5
+                        x: 10
+                        y: 76
+                        width: 12
+                        height: 70
+                        radius: 6
+                        bg_color: 0x3A4654
+                        bg_opa: COVER
+                        border_width: 0
+                        clickable: false
+                        scrollable: false
+                        overflow_visible: true
+                        transform_pivot_x: 0%
+                        transform_pivot_y: -30
+                        transform_rotation: 341
+                    - obj:
+                        x: 0
+                        y: 0
+                        width: 26
+                        height: 158
+                        radius: 0
+                        bg_opa: TRANSP
+                        border_width: 0
+                        pad_all: 0
+                        clickable: true
+                        scrollable: false
+                        on_click:
+                          - lambda: 'id(ac).select_vane_v(1);'
+                    - obj:
+                        x: 26
+                        y: 0
+                        width: 26
+                        height: 158
+                        radius: 0
+                        bg_opa: TRANSP
+                        border_width: 0
+                        pad_all: 0
+                        clickable: true
+                        scrollable: false
+                        on_click:
+                          - lambda: 'id(ac).select_vane_v(2);'
+                    - obj:
+                        x: 52
+                        y: 0
+                        width: 26
+                        height: 158
+                        radius: 0
+                        bg_opa: TRANSP
+                        border_width: 0
+                        pad_all: 0
+                        clickable: true
+                        scrollable: false
+                        on_click:
+                          - lambda: 'id(ac).select_vane_v(3);'
+                    - obj:
+                        x: 78
+                        y: 0
+                        width: 26
+                        height: 158
+                        radius: 0
+                        bg_opa: TRANSP
+                        border_width: 0
+                        pad_all: 0
+                        clickable: true
+                        scrollable: false
+                        on_click:
+                          - lambda: 'id(ac).select_vane_v(4);'
+                    - obj:
+                        x: 104
+                        y: 0
+                        width: 26
+                        height: 158
+                        radius: 0
+                        bg_opa: TRANSP
+                        border_width: 0
+                        pad_all: 0
+                        clickable: true
+                        scrollable: false
+                        on_click:
+                          - lambda: 'id(ac).select_vane_v(5);'
+              - button:
+                  x: 98
+                  y: 196
+                  width: 62
+                  height: 40
+                  radius: 10
+                  bg_color: 0x1A2330
+                  border_width: 0
+                  pad_all: 0
+                  scrollable: false
+                  layout:
+                    type: flex
+                    flex_flow: row
+                    flex_align_main: center
+                    flex_align_cross: center
+                    flex_align_track: center
+                  widgets:
+                    - label:
+                        text_align: CENTER
+                        text_font: font_icon
+                        text_color: 0xF4F7FB
+                        text: "\uE314"
+                  on_click:
+                    - lambda: 'id(ac).step_vane_v(1);'
+              - button:
+                  x: 166
+                  y: 196
+                  width: 62
+                  height: 40
+                  radius: 10
+                  bg_color: 0x1A2330
+                  border_width: 0
+                  pad_all: 0
+                  scrollable: false
+                  layout:
+                    type: flex
+                    flex_flow: row
+                    flex_align_main: center
+                    flex_align_cross: center
+                    flex_align_track: center
+                  widgets:
+                    - label:
+                        text_align: CENTER
+                        text_font: font_icon
+                        text_color: 0xF4F7FB
+                        text: "\uE315"
+                  on_click:
+                    - lambda: 'id(ac).step_vane_v(-1);'
+        - obj:
+            id: vane_h_group
             x: 244
-            y: 260
-            width: 110
-            height: 42
-            radius: 10
-            checkable: true
-            bg_color: 0x1A2330
+            y: 232
+            width: 228
+            height: 240
+            bg_opa: TRANSP
             border_width: 0
-            checked:
-              bg_color: 0x1F6FEB
             pad_all: 0
+            clickable: false
             scrollable: false
-            layout:
-              type: flex
-              flex_flow: row
-              flex_align_main: center
-              flex_align_cross: center
-              flex_align_track: center
-              pad_column: 4
+            overflow_visible: true
             widgets:
               - label:
-                  id: vh_icon_2
-                  width: 26
-                  height: 26
-                  text_align: CENTER
-                  text_font: font_icon
-                  text_color: 0xB7C0CA
-                  text: "\U000F0210"
-                  transform_pivot_x: 50%
-                  transform_pivot_y: 50%
-              - label:
-                  id: vh_label_2
-                  text: " "
-                  text_align: CENTER
-                  text_font: font_small
-            on_click:
-              - lambda: |-
-                  id(ac).select_vane_h(2);
-        - button:
-            id: vh_3
-            x: 360
-            y: 260
-            width: 110
-            height: 42
-            radius: 10
-            checkable: true
-            bg_color: 0x1A2330
-            border_width: 0
-            checked:
-              bg_color: 0x1F6FEB
-            pad_all: 0
-            scrollable: false
-            layout:
-              type: flex
-              flex_flow: row
-              flex_align_main: center
-              flex_align_cross: center
-              flex_align_track: center
-              pad_column: 4
-            widgets:
-              - label:
-                  id: vh_icon_3
-                  width: 26
-                  height: 26
-                  text_align: CENTER
-                  text_font: font_icon
-                  text_color: 0xB7C0CA
-                  text: "\U000F0210"
-                  transform_pivot_x: 50%
-                  transform_pivot_y: 50%
-              - label:
-                  id: vh_label_3
-                  text: " "
-                  text_align: CENTER
-                  text_font: font_small
-            on_click:
-              - lambda: |-
-                  id(ac).select_vane_h(3);
-        - button:
-            id: vh_4
-            x: 12
-            y: 308
-            width: 110
-            height: 42
-            radius: 10
-            checkable: true
-            bg_color: 0x1A2330
-            border_width: 0
-            checked:
-              bg_color: 0x1F6FEB
-            pad_all: 0
-            scrollable: false
-            layout:
-              type: flex
-              flex_flow: row
-              flex_align_main: center
-              flex_align_cross: center
-              flex_align_track: center
-              pad_column: 4
-            widgets:
-              - label:
-                  id: vh_icon_4
-                  width: 26
-                  height: 26
-                  text_align: CENTER
-                  text_font: font_icon
-                  text_color: 0xB7C0CA
-                  text: "\U000F0210"
-                  transform_pivot_x: 50%
-                  transform_pivot_y: 50%
-              - label:
-                  id: vh_label_4
-                  text: " "
-                  text_align: CENTER
-                  text_font: font_small
-            on_click:
-              - lambda: |-
-                  id(ac).select_vane_h(4);
-        - button:
-            id: vh_5
-            x: 128
-            y: 308
-            width: 110
-            height: 42
-            radius: 10
-            checkable: true
-            bg_color: 0x1A2330
-            border_width: 0
-            checked:
-              bg_color: 0x1F6FEB
-            pad_all: 0
-            scrollable: false
-            layout:
-              type: flex
-              flex_flow: row
-              flex_align_main: center
-              flex_align_cross: center
-              flex_align_track: center
-              pad_column: 4
-            widgets:
-              - label:
-                  id: vh_icon_5
-                  width: 26
-                  height: 26
-                  text_align: CENTER
-                  text_font: font_icon
-                  text_color: 0xB7C0CA
-                  text: "\U000F0210"
-                  transform_pivot_x: 50%
-                  transform_pivot_y: 50%
-              - label:
-                  id: vh_label_5
-                  text: " "
-                  text_align: CENTER
-                  text_font: font_small
-            on_click:
-              - lambda: |-
-                  id(ac).select_vane_h(5);
-        - button:
-            id: vh_6
-            x: 244
-            y: 308
-            width: 110
-            height: 42
-            radius: 10
-            checkable: true
-            bg_color: 0x1A2330
-            border_width: 0
-            checked:
-              bg_color: 0x1F6FEB
-            pad_all: 0
-            scrollable: false
-            layout:
-              type: flex
-              flex_flow: row
-              flex_align_main: center
-              flex_align_cross: center
-              flex_align_track: center
-              pad_column: 4
-            widgets:
-              - label:
-                  id: vh_icon_6
-                  width: 26
-                  height: 26
-                  text_align: CENTER
-                  text_font: font_icon
-                  text_color: 0xB7C0CA
-                  text: "\U000F0210"
-                  transform_pivot_x: 50%
-                  transform_pivot_y: 50%
-              - label:
-                  id: vh_label_6
-                  text: " "
-                  text_align: CENTER
-                  text_font: font_small
-            on_click:
-              - lambda: |-
-                  id(ac).select_vane_h(6);
-        - button:
-            id: vh_7
-            x: 360
-            y: 308
-            width: 110
-            height: 42
-            radius: 10
-            checkable: true
-            bg_color: 0x1A2330
-            border_width: 0
-            checked:
-              bg_color: 0x1F6FEB
-            pad_all: 0
-            scrollable: false
-            layout:
-              type: flex
-              flex_flow: row
-              flex_align_main: center
-              flex_align_cross: center
-              flex_align_track: center
-              pad_column: 4
-            widgets:
-              - label:
-                  id: vh_icon_7
-                  width: 26
-                  height: 26
-                  text_align: CENTER
-                  text_font: font_icon
-                  text_color: 0xB7C0CA
-                  text: "\U000F0210"
-                  transform_pivot_x: 50%
-                  transform_pivot_y: 50%
-              - label:
-                  id: vh_label_7
-                  text: " "
-                  text_align: CENTER
-                  text_font: font_small
-            on_click:
-              - lambda: |-
-                  id(ac).select_vane_h(7);
-        - label:
-            id: vane_v_title
-            text: "Vertical"
-            x: 16
-            y: 360
-            text_font: font_ui
-            text_color: 0x93A0B0
-        - button:
-            id: vv_0
-            x: 12
-            y: 390
-            width: 110
-            height: 42
-            radius: 10
-            checkable: true
-            bg_color: 0x1A2330
-            border_width: 0
-            checked:
-              bg_color: 0x1F6FEB
-            pad_all: 0
-            scrollable: false
-            layout:
-              type: flex
-              flex_flow: row
-              flex_align_main: center
-              flex_align_cross: center
-              flex_align_track: center
-              pad_column: 4
-            widgets:
-              - label:
-                  id: vv_icon_0
-                  width: 26
-                  height: 26
-                  text_align: CENTER
-                  text_font: font_icon
-                  text_color: 0xB7C0CA
-                  text: "\U000F0210"
-                  transform_pivot_x: 50%
-                  transform_pivot_y: 50%
-              - label:
-                  id: vv_label_0
-                  text: " "
-                  text_align: CENTER
-                  text_font: font_small
-            on_click:
-              - lambda: |-
-                  id(ac).select_vane_v(0);
-        - button:
-            id: vv_1
-            x: 128
-            y: 390
-            width: 110
-            height: 42
-            radius: 10
-            checkable: true
-            bg_color: 0x1A2330
-            border_width: 0
-            checked:
-              bg_color: 0x1F6FEB
-            pad_all: 0
-            scrollable: false
-            layout:
-              type: flex
-              flex_flow: row
-              flex_align_main: center
-              flex_align_cross: center
-              flex_align_track: center
-              pad_column: 4
-            widgets:
-              - label:
-                  id: vv_icon_1
-                  width: 26
-                  height: 26
-                  text_align: CENTER
-                  text_font: font_icon
-                  text_color: 0xB7C0CA
-                  text: "\U000F0210"
-                  transform_pivot_x: 50%
-                  transform_pivot_y: 50%
-              - label:
-                  id: vv_label_1
-                  text: " "
-                  text_align: CENTER
-                  text_font: font_small
-            on_click:
-              - lambda: |-
-                  id(ac).select_vane_v(1);
-        - button:
-            id: vv_2
-            x: 244
-            y: 390
-            width: 110
-            height: 42
-            radius: 10
-            checkable: true
-            bg_color: 0x1A2330
-            border_width: 0
-            checked:
-              bg_color: 0x1F6FEB
-            pad_all: 0
-            scrollable: false
-            layout:
-              type: flex
-              flex_flow: row
-              flex_align_main: center
-              flex_align_cross: center
-              flex_align_track: center
-              pad_column: 4
-            widgets:
-              - label:
-                  id: vv_icon_2
-                  width: 26
-                  height: 26
-                  text_align: CENTER
-                  text_font: font_icon
-                  text_color: 0xB7C0CA
-                  text: "\U000F0210"
-                  transform_pivot_x: 50%
-                  transform_pivot_y: 50%
-              - label:
-                  id: vv_label_2
-                  text: " "
-                  text_align: CENTER
-                  text_font: font_small
-            on_click:
-              - lambda: |-
-                  id(ac).select_vane_v(2);
-        - button:
-            id: vv_3
-            x: 360
-            y: 390
-            width: 110
-            height: 42
-            radius: 10
-            checkable: true
-            bg_color: 0x1A2330
-            border_width: 0
-            checked:
-              bg_color: 0x1F6FEB
-            pad_all: 0
-            scrollable: false
-            layout:
-              type: flex
-              flex_flow: row
-              flex_align_main: center
-              flex_align_cross: center
-              flex_align_track: center
-              pad_column: 4
-            widgets:
-              - label:
-                  id: vv_icon_3
-                  width: 26
-                  height: 26
-                  text_align: CENTER
-                  text_font: font_icon
-                  text_color: 0xB7C0CA
-                  text: "\U000F0210"
-                  transform_pivot_x: 50%
-                  transform_pivot_y: 50%
-              - label:
-                  id: vv_label_3
-                  text: " "
-                  text_align: CENTER
-                  text_font: font_small
-            on_click:
-              - lambda: |-
-                  id(ac).select_vane_v(3);
-        - button:
-            id: vv_4
-            x: 12
-            y: 438
-            width: 110
-            height: 42
-            radius: 10
-            checkable: true
-            bg_color: 0x1A2330
-            border_width: 0
-            checked:
-              bg_color: 0x1F6FEB
-            pad_all: 0
-            scrollable: false
-            layout:
-              type: flex
-              flex_flow: row
-              flex_align_main: center
-              flex_align_cross: center
-              flex_align_track: center
-              pad_column: 4
-            widgets:
-              - label:
-                  id: vv_icon_4
-                  width: 26
-                  height: 26
-                  text_align: CENTER
-                  text_font: font_icon
-                  text_color: 0xB7C0CA
-                  text: "\U000F0210"
-                  transform_pivot_x: 50%
-                  transform_pivot_y: 50%
-              - label:
-                  id: vv_label_4
-                  text: " "
-                  text_align: CENTER
-                  text_font: font_small
-            on_click:
-              - lambda: |-
-                  id(ac).select_vane_v(4);
-        - button:
-            id: vv_5
-            x: 128
-            y: 438
-            width: 110
-            height: 42
-            radius: 10
-            checkable: true
-            bg_color: 0x1A2330
-            border_width: 0
-            checked:
-              bg_color: 0x1F6FEB
-            pad_all: 0
-            scrollable: false
-            layout:
-              type: flex
-              flex_flow: row
-              flex_align_main: center
-              flex_align_cross: center
-              flex_align_track: center
-              pad_column: 4
-            widgets:
-              - label:
-                  id: vv_icon_5
-                  width: 26
-                  height: 26
-                  text_align: CENTER
-                  text_font: font_icon
-                  text_color: 0xB7C0CA
-                  text: "\U000F0210"
-                  transform_pivot_x: 50%
-                  transform_pivot_y: 50%
-              - label:
-                  id: vv_label_5
-                  text: " "
-                  text_align: CENTER
-                  text_font: font_small
-            on_click:
-              - lambda: |-
-                  id(ac).select_vane_v(5);
-        - button:
-            id: vv_6
-            x: 244
-            y: 438
-            width: 110
-            height: 42
-            radius: 10
-            checkable: true
-            bg_color: 0x1A2330
-            border_width: 0
-            checked:
-              bg_color: 0x1F6FEB
-            pad_all: 0
-            scrollable: false
-            layout:
-              type: flex
-              flex_flow: row
-              flex_align_main: center
-              flex_align_cross: center
-              flex_align_track: center
-              pad_column: 4
-            widgets:
-              - label:
-                  id: vv_icon_6
-                  width: 26
-                  height: 26
-                  text_align: CENTER
-                  text_font: font_icon
-                  text_color: 0xB7C0CA
-                  text: "\U000F0210"
-                  transform_pivot_x: 50%
-                  transform_pivot_y: 50%
-              - label:
-                  id: vv_label_6
-                  text: " "
-                  text_align: CENTER
-                  text_font: font_small
-            on_click:
-              - lambda: |-
-                  id(ac).select_vane_v(6);
+                  id: vane_h_title
+                  text: "Horizontal"
+                  x: 0
+                  y: 0
+                  text_font: font_ui
+                  text_color: 0x93A0B0
+              - button:
+                  id: vh_auto
+                  x: 0
+                  y: 32
+                  width: 92
+                  height: 100
+                  radius: 12
+                  checkable: true
+                  bg_color: 0x1A2330
+                  border_width: 0
+                  checked:
+                    bg_color: 0x1F6FEB
+                  pad_all: 0
+                  scrollable: false
+                  layout:
+                    type: flex
+                    flex_flow: column
+                    flex_align_main: center
+                    flex_align_cross: center
+                    flex_align_track: center
+                    pad_row: 4
+                  widgets:
+                    - label:
+                        width: 26
+                        height: 26
+                        text_align: CENTER
+                        text_font: font_icon
+                        text_color: 0xB7C0CA
+                        text: "\uE863"
+                    - label:
+                        text: "Auto"
+                        text_align: CENTER
+                        text_font: font_small
+                        text_color: 0xF4F7FB
+                  on_click:
+                    - lambda: 'id(ac).select_vane_h(0);'
+              - button:
+                  id: vh_swing
+                  x: 0
+                  y: 140
+                  width: 92
+                  height: 100
+                  radius: 12
+                  checkable: true
+                  bg_color: 0x1A2330
+                  border_width: 0
+                  checked:
+                    bg_color: 0x1F6FEB
+                  pad_all: 0
+                  scrollable: false
+                  layout:
+                    type: flex
+                    flex_flow: column
+                    flex_align_main: center
+                    flex_align_cross: center
+                    flex_align_track: center
+                    pad_row: 4
+                  widgets:
+                    - label:
+                        width: 26
+                        height: 26
+                        text_align: CENTER
+                        text_font: font_icon
+                        text_color: 0xB7C0CA
+                        text: "\uEA18"
+                    - label:
+                        text: "Swing"
+                        text_align: CENTER
+                        text_font: font_small
+                        text_color: 0xF4F7FB
+                  on_click:
+                    - lambda: 'id(ac).select_vane_h(7);'
+              - obj:
+                  x: 98
+                  y: 32
+                  width: 130
+                  height: 158
+                  radius: 12
+                  bg_color: 0x1A2330
+                  bg_opa: COVER
+                  border_width: 0
+                  pad_all: 0
+                  clickable: false
+                  scrollable: false
+                  overflow_visible: true
+                  widgets:
+                    - obj:
+                        id: vh_bar_1
+                        x: 59
+                        y: 56
+                        width: 12
+                        height: 70
+                        radius: 6
+                        bg_color: 0x3A4654
+                        bg_opa: COVER
+                        border_width: 0
+                        clickable: false
+                        scrollable: false
+                        overflow_visible: true
+                        transform_pivot_x: 50%
+                        transform_pivot_y: -30
+                        transform_rotation: 36
+                    - obj:
+                        id: vh_bar_2
+                        x: 59
+                        y: 56
+                        width: 12
+                        height: 70
+                        radius: 6
+                        bg_color: 0x3A4654
+                        bg_opa: COVER
+                        border_width: 0
+                        clickable: false
+                        scrollable: false
+                        overflow_visible: true
+                        transform_pivot_x: 50%
+                        transform_pivot_y: -30
+                        transform_rotation: 18
+                    - obj:
+                        id: vh_bar_3
+                        x: 59
+                        y: 56
+                        width: 12
+                        height: 70
+                        radius: 6
+                        bg_color: 0x3A4654
+                        bg_opa: COVER
+                        border_width: 0
+                        clickable: false
+                        scrollable: false
+                        overflow_visible: true
+                        transform_pivot_x: 50%
+                        transform_pivot_y: -30
+                        transform_rotation: 0
+                    - obj:
+                        id: vh_bar_4
+                        x: 59
+                        y: 56
+                        width: 12
+                        height: 70
+                        radius: 6
+                        bg_color: 0x3A4654
+                        bg_opa: COVER
+                        border_width: 0
+                        clickable: false
+                        scrollable: false
+                        overflow_visible: true
+                        transform_pivot_x: 50%
+                        transform_pivot_y: -30
+                        transform_rotation: 342
+                    - obj:
+                        id: vh_bar_5
+                        x: 59
+                        y: 56
+                        width: 12
+                        height: 70
+                        radius: 6
+                        bg_color: 0x3A4654
+                        bg_opa: COVER
+                        border_width: 0
+                        clickable: false
+                        scrollable: false
+                        overflow_visible: true
+                        transform_pivot_x: 50%
+                        transform_pivot_y: -30
+                        transform_rotation: 324
+                    - obj:
+                        x: 0
+                        y: 0
+                        width: 26
+                        height: 158
+                        radius: 0
+                        bg_opa: TRANSP
+                        border_width: 0
+                        pad_all: 0
+                        clickable: true
+                        scrollable: false
+                        on_click:
+                          - lambda: 'id(ac).select_vane_h(1);'
+                    - obj:
+                        x: 26
+                        y: 0
+                        width: 26
+                        height: 158
+                        radius: 0
+                        bg_opa: TRANSP
+                        border_width: 0
+                        pad_all: 0
+                        clickable: true
+                        scrollable: false
+                        on_click:
+                          - lambda: 'id(ac).select_vane_h(2);'
+                    - obj:
+                        x: 52
+                        y: 0
+                        width: 26
+                        height: 158
+                        radius: 0
+                        bg_opa: TRANSP
+                        border_width: 0
+                        pad_all: 0
+                        clickable: true
+                        scrollable: false
+                        on_click:
+                          - lambda: 'id(ac).select_vane_h(3);'
+                    - obj:
+                        x: 78
+                        y: 0
+                        width: 26
+                        height: 158
+                        radius: 0
+                        bg_opa: TRANSP
+                        border_width: 0
+                        pad_all: 0
+                        clickable: true
+                        scrollable: false
+                        on_click:
+                          - lambda: 'id(ac).select_vane_h(4);'
+                    - obj:
+                        x: 104
+                        y: 0
+                        width: 26
+                        height: 158
+                        radius: 0
+                        bg_opa: TRANSP
+                        border_width: 0
+                        pad_all: 0
+                        clickable: true
+                        scrollable: false
+                        on_click:
+                          - lambda: 'id(ac).select_vane_h(5);'
+              - button:
+                  x: 98
+                  y: 196
+                  width: 62
+                  height: 40
+                  radius: 10
+                  bg_color: 0x1A2330
+                  border_width: 0
+                  pad_all: 0
+                  scrollable: false
+                  layout:
+                    type: flex
+                    flex_flow: row
+                    flex_align_main: center
+                    flex_align_cross: center
+                    flex_align_track: center
+                  widgets:
+                    - label:
+                        text_align: CENTER
+                        text_font: font_icon
+                        text_color: 0xF4F7FB
+                        text: "\uE314"
+                  on_click:
+                    - lambda: 'id(ac).step_vane_h(-1);'
+              - button:
+                  x: 166
+                  y: 196
+                  width: 62
+                  height: 40
+                  radius: 10
+                  bg_color: 0x1A2330
+                  border_width: 0
+                  pad_all: 0
+                  scrollable: false
+                  layout:
+                    type: flex
+                    flex_flow: row
+                    flex_align_main: center
+                    flex_align_cross: center
+                    flex_align_track: center
+                  widgets:
+                    - label:
+                        text_align: CENTER
+                        text_font: font_icon
+                        text_color: 0xF4F7FB
+                        text: "\uE315"
+                  on_click:
+                    - lambda: 'id(ac).step_vane_h(1);'
 
 script:
   - id: settings_back
@@ -1745,21 +1732,19 @@ interval:
           paint(id(fan_icon_3), id(ac).fan_icon(3), 0, id(ac).fan_scale(3));
           paint(id(fan_icon_4), id(ac).fan_icon(4), 0, id(ac).fan_scale(4));
           paint(id(fan_icon_5), id(ac).fan_icon(5), 0, id(ac).fan_scale(5));
-          paint(id(vh_icon_0), id(ac).vane_h_icon(0), id(ac).vane_h_angle(0), 1.0f);
-          paint(id(vh_icon_1), id(ac).vane_h_icon(1), id(ac).vane_h_angle(1), 1.0f);
-          paint(id(vh_icon_2), id(ac).vane_h_icon(2), id(ac).vane_h_angle(2), 1.0f);
-          paint(id(vh_icon_3), id(ac).vane_h_icon(3), id(ac).vane_h_angle(3), 1.0f);
-          paint(id(vh_icon_4), id(ac).vane_h_icon(4), id(ac).vane_h_angle(4), 1.0f);
-          paint(id(vh_icon_5), id(ac).vane_h_icon(5), id(ac).vane_h_angle(5), 1.0f);
-          paint(id(vh_icon_6), id(ac).vane_h_icon(6), id(ac).vane_h_angle(6), 1.0f);
-          paint(id(vh_icon_7), id(ac).vane_h_icon(7), id(ac).vane_h_angle(7), 1.0f);
-          paint(id(vv_icon_0), id(ac).vane_v_icon(0), id(ac).vane_v_angle(0), 1.0f);
-          paint(id(vv_icon_1), id(ac).vane_v_icon(1), id(ac).vane_v_angle(1), 1.0f);
-          paint(id(vv_icon_2), id(ac).vane_v_icon(2), id(ac).vane_v_angle(2), 1.0f);
-          paint(id(vv_icon_3), id(ac).vane_v_icon(3), id(ac).vane_v_angle(3), 1.0f);
-          paint(id(vv_icon_4), id(ac).vane_v_icon(4), id(ac).vane_v_angle(4), 1.0f);
-          paint(id(vv_icon_5), id(ac).vane_v_icon(5), id(ac).vane_v_angle(5), 1.0f);
-          paint(id(vv_icon_6), id(ac).vane_v_icon(6), id(ac).vane_v_angle(6), 1.0f);
+          auto paint_bar = [](lv_obj_t *obj, bool selected) {
+            lv_obj_set_style_bg_color(obj, lv_color_hex(selected ? 0xF4F7FB : 0x3A4654), LV_PART_MAIN);
+          };
+          paint_bar(id(vv_bar_1), id(ac).vane_v_selected(1));
+          paint_bar(id(vv_bar_2), id(ac).vane_v_selected(2));
+          paint_bar(id(vv_bar_3), id(ac).vane_v_selected(3));
+          paint_bar(id(vv_bar_4), id(ac).vane_v_selected(4));
+          paint_bar(id(vv_bar_5), id(ac).vane_v_selected(5));
+          paint_bar(id(vh_bar_1), id(ac).vane_h_selected(1));
+          paint_bar(id(vh_bar_2), id(ac).vane_h_selected(2));
+          paint_bar(id(vh_bar_3), id(ac).vane_h_selected(3));
+          paint_bar(id(vh_bar_4), id(ac).vane_h_selected(4));
+          paint_bar(id(vh_bar_5), id(ac).vane_h_selected(5));
       - lvgl.label.update:
           id: setpoint_label
           text: !lambda 'return id(ac).setpoint_text();'
@@ -1856,128 +1841,26 @@ interval:
           state:
             checked: !lambda 'return id(ac).fan_selected(5);'
       - lvgl.widget.update:
-          id: vane_h_title
-          hidden: !lambda 'return !id(ac).show_vane_h();'
-      - lvgl.label.update:
-          id: vh_label_0
-          text: !lambda 'return id(ac).vane_h_label(0);'
-      - lvgl.widget.update:
-          id: vh_0
-          hidden: !lambda 'return !id(ac).show_vane_h() || id(ac).vane_h_count() <= 0;'
-          state:
-            checked: !lambda 'return id(ac).vane_h_selected(0);'
-      - lvgl.label.update:
-          id: vh_label_1
-          text: !lambda 'return id(ac).vane_h_label(1);'
-      - lvgl.widget.update:
-          id: vh_1
-          hidden: !lambda 'return !id(ac).show_vane_h() || id(ac).vane_h_count() <= 1;'
-          state:
-            checked: !lambda 'return id(ac).vane_h_selected(1);'
-      - lvgl.label.update:
-          id: vh_label_2
-          text: !lambda 'return id(ac).vane_h_label(2);'
-      - lvgl.widget.update:
-          id: vh_2
-          hidden: !lambda 'return !id(ac).show_vane_h() || id(ac).vane_h_count() <= 2;'
-          state:
-            checked: !lambda 'return id(ac).vane_h_selected(2);'
-      - lvgl.label.update:
-          id: vh_label_3
-          text: !lambda 'return id(ac).vane_h_label(3);'
-      - lvgl.widget.update:
-          id: vh_3
-          hidden: !lambda 'return !id(ac).show_vane_h() || id(ac).vane_h_count() <= 3;'
-          state:
-            checked: !lambda 'return id(ac).vane_h_selected(3);'
-      - lvgl.label.update:
-          id: vh_label_4
-          text: !lambda 'return id(ac).vane_h_label(4);'
-      - lvgl.widget.update:
-          id: vh_4
-          hidden: !lambda 'return !id(ac).show_vane_h() || id(ac).vane_h_count() <= 4;'
-          state:
-            checked: !lambda 'return id(ac).vane_h_selected(4);'
-      - lvgl.label.update:
-          id: vh_label_5
-          text: !lambda 'return id(ac).vane_h_label(5);'
-      - lvgl.widget.update:
-          id: vh_5
-          hidden: !lambda 'return !id(ac).show_vane_h() || id(ac).vane_h_count() <= 5;'
-          state:
-            checked: !lambda 'return id(ac).vane_h_selected(5);'
-      - lvgl.label.update:
-          id: vh_label_6
-          text: !lambda 'return id(ac).vane_h_label(6);'
-      - lvgl.widget.update:
-          id: vh_6
-          hidden: !lambda 'return !id(ac).show_vane_h() || id(ac).vane_h_count() <= 6;'
-          state:
-            checked: !lambda 'return id(ac).vane_h_selected(6);'
-      - lvgl.label.update:
-          id: vh_label_7
-          text: !lambda 'return id(ac).vane_h_label(7);'
-      - lvgl.widget.update:
-          id: vh_7
-          hidden: !lambda 'return !id(ac).show_vane_h() || id(ac).vane_h_count() <= 7;'
-          state:
-            checked: !lambda 'return id(ac).vane_h_selected(7);'
-      - lvgl.widget.update:
-          id: vane_v_title
+          id: vane_v_group
           hidden: !lambda 'return !id(ac).show_vane_v();'
-      - lvgl.label.update:
-          id: vv_label_0
-          text: !lambda 'return id(ac).vane_v_label(0);'
       - lvgl.widget.update:
-          id: vv_0
-          hidden: !lambda 'return !id(ac).show_vane_v() || id(ac).vane_v_count() <= 0;'
+          id: vv_auto
           state:
             checked: !lambda 'return id(ac).vane_v_selected(0);'
-      - lvgl.label.update:
-          id: vv_label_1
-          text: !lambda 'return id(ac).vane_v_label(1);'
       - lvgl.widget.update:
-          id: vv_1
-          hidden: !lambda 'return !id(ac).show_vane_v() || id(ac).vane_v_count() <= 1;'
-          state:
-            checked: !lambda 'return id(ac).vane_v_selected(1);'
-      - lvgl.label.update:
-          id: vv_label_2
-          text: !lambda 'return id(ac).vane_v_label(2);'
-      - lvgl.widget.update:
-          id: vv_2
-          hidden: !lambda 'return !id(ac).show_vane_v() || id(ac).vane_v_count() <= 2;'
-          state:
-            checked: !lambda 'return id(ac).vane_v_selected(2);'
-      - lvgl.label.update:
-          id: vv_label_3
-          text: !lambda 'return id(ac).vane_v_label(3);'
-      - lvgl.widget.update:
-          id: vv_3
-          hidden: !lambda 'return !id(ac).show_vane_v() || id(ac).vane_v_count() <= 3;'
-          state:
-            checked: !lambda 'return id(ac).vane_v_selected(3);'
-      - lvgl.label.update:
-          id: vv_label_4
-          text: !lambda 'return id(ac).vane_v_label(4);'
-      - lvgl.widget.update:
-          id: vv_4
-          hidden: !lambda 'return !id(ac).show_vane_v() || id(ac).vane_v_count() <= 4;'
-          state:
-            checked: !lambda 'return id(ac).vane_v_selected(4);'
-      - lvgl.label.update:
-          id: vv_label_5
-          text: !lambda 'return id(ac).vane_v_label(5);'
-      - lvgl.widget.update:
-          id: vv_5
-          hidden: !lambda 'return !id(ac).show_vane_v() || id(ac).vane_v_count() <= 5;'
-          state:
-            checked: !lambda 'return id(ac).vane_v_selected(5);'
-      - lvgl.label.update:
-          id: vv_label_6
-          text: !lambda 'return id(ac).vane_v_label(6);'
-      - lvgl.widget.update:
-          id: vv_6
-          hidden: !lambda 'return !id(ac).show_vane_v() || id(ac).vane_v_count() <= 6;'
+          id: vv_swing
+          hidden: !lambda 'return id(ac).vane_v_count() < 7;'
           state:
             checked: !lambda 'return id(ac).vane_v_selected(6);'
+      - lvgl.widget.update:
+          id: vane_h_group
+          hidden: !lambda 'return !id(ac).show_vane_h();'
+      - lvgl.widget.update:
+          id: vh_auto
+          state:
+            checked: !lambda 'return id(ac).vane_h_selected(0);'
+      - lvgl.widget.update:
+          id: vh_swing
+          hidden: !lambda 'return id(ac).vane_h_count() < 8;'
+          state:
+            checked: !lambda 'return id(ac).vane_h_selected(7);'

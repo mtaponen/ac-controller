@@ -880,6 +880,70 @@ void MelCloud::select_vane_v(int index) {
   this->shown_.vane_v = value;
 }
 
+int MelCloud::step_index_(const Choice *choices, int choice_count, int current, int delta) {
+  int order[8];
+  int count = 0;
+  int here = -1;
+  int skipped_here = -1;
+  for (int i = 0; i < choice_count && count < 8; i++) {
+    if (choices[i].value == 8) {
+      if (choices[i].value == current) {
+        skipped_here = count;
+      }
+      continue;
+    }
+    if (choices[i].value == current && here < 0) {
+      here = count;
+    }
+    order[count++] = i;
+  }
+  if (count == 0 || delta == 0) {
+    return -1;
+  }
+  int dest;
+  if (here >= 0) {
+    dest = here + (delta > 0 ? 1 : -1);
+  } else if (skipped_here >= 0) {
+    dest = delta > 0 ? skipped_here : skipped_here - 1;
+  } else {
+    return -1;
+  }
+  if (dest < 0 || dest >= count) {
+    return -1;
+  }
+  return order[dest];
+}
+
+void MelCloud::step_vane_h(int delta) {
+  int next = -1;
+  {
+    std::lock_guard<std::mutex> lock(this->mu_);
+    if (!this->shown_.online) {
+      return;
+    }
+    const int current = this->pending_.vane_h ? this->pending_.vane_h_value : this->shown_.vane_h;
+    next = step_index_(this->vane_h_, this->vane_h_count_, current, delta);
+  }
+  if (next >= 0) {
+    this->select_vane_h(next);
+  }
+}
+
+void MelCloud::step_vane_v(int delta) {
+  int next = -1;
+  {
+    std::lock_guard<std::mutex> lock(this->mu_);
+    if (!this->shown_.online) {
+      return;
+    }
+    const int current = this->pending_.vane_v ? this->pending_.vane_v_value : this->shown_.vane_v;
+    next = step_index_(this->vane_v_, this->vane_v_count_, current, delta);
+  }
+  if (next >= 0) {
+    this->select_vane_v(next);
+  }
+}
+
 bool MelCloud::has_state() const {
   std::lock_guard<std::mutex> lock(this->mu_);
   return this->shown_.has_state;
@@ -921,9 +985,6 @@ static const char *const ICON_SNOW = "\uEB3B";
 static const char *const ICON_AUTO = "\uE863";
 static const char *const ICON_DROP = "\uE798";
 static const char *const ICON_FAN = "\U000F0210";
-static const char *const ICON_ARROW = "\uE5C8";
-static const char *const ICON_SWING = "\uEA18";
-static const char *const ICON_SPLIT = "\uE0B6";
 
 static const uint32_t COLOR_HEAT = 0xF5C518;
 static const uint32_t COLOR_COOL = 0x7ECBFF;
@@ -1034,80 +1095,6 @@ float MelCloud::current_fan_scale() const {
       return 1.28f;
     default:
       return 0.9f;
-  }
-}
-
-const char *MelCloud::vane_h_icon(int index) const {
-  std::lock_guard<std::mutex> lock(this->mu_);
-  if (index < 0 || index >= this->vane_h_count_) {
-    return "";
-  }
-  switch (this->vane_h_[index].value) {
-    case 0:
-      return ICON_AUTO;
-    case 8:
-      return ICON_SPLIT;
-    case 12:
-      return ICON_SWING;
-    default:
-      return ICON_ARROW;
-  }
-}
-
-int MelCloud::vane_h_angle(int index) const {
-  std::lock_guard<std::mutex> lock(this->mu_);
-  if (index < 0 || index >= this->vane_h_count_) {
-    return 0;
-  }
-  switch (this->vane_h_[index].value) {
-    case 1:
-      return 90;
-    case 2:
-      return 67;
-    case 3:
-      return 45;
-    case 4:
-      return 22;
-    case 12:
-      return 45;
-    default:
-      return 0;
-  }
-}
-
-const char *MelCloud::vane_v_icon(int index) const {
-  std::lock_guard<std::mutex> lock(this->mu_);
-  if (index < 0 || index >= this->vane_v_count_) {
-    return "";
-  }
-  switch (this->vane_v_[index].value) {
-    case 0:
-      return ICON_AUTO;
-    case 7:
-      return ICON_SWING;
-    default:
-      return ICON_ARROW;
-  }
-}
-
-int MelCloud::vane_v_angle(int index) const {
-  std::lock_guard<std::mutex> lock(this->mu_);
-  if (index < 0 || index >= this->vane_v_count_) {
-    return 0;
-  }
-  switch (this->vane_v_[index].value) {
-    case 1:
-      return 180;
-    case 2:
-      return 225;
-    case 3:
-      return 270;
-    case 4:
-      return 315;
-    case 7:
-      return 45;
-    default:
-      return 0;
   }
 }
 

@@ -29,6 +29,8 @@ class MelCloud : public Component {
   void select_fan(int index);
   void select_vane_h(int index);
   void select_vane_v(int index);
+  void step_vane_h(int delta);
+  void step_vane_v(int delta);
 
   bool has_state() const;
   std::string mode_line() const;
@@ -44,10 +46,6 @@ class MelCloud : public Component {
   const char *fan_icon(int index) const;
   float fan_scale(int index) const;
   bool fan_is_auto(int index) const;
-  const char *vane_h_icon(int index) const;
-  int vane_h_angle(int index) const;
-  const char *vane_v_icon(int index) const;
-  int vane_v_angle(int index) const;
 
   int arc_min() const;
   int arc_max() const;
@@ -137,6 +135,7 @@ class MelCloud : public Component {
   bool any_pending_unlocked_() const;
   int arc_min_unlocked_(int mode) const;
   static void set_choice_(Choice &choice, int value, const char *label);
+  static int step_index_(const Choice *choices, int choice_count, int current, int delta);
   static int mode_code_(const char *mode);
   static const char *mode_word_(int mode);
 
