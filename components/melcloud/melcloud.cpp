@@ -909,6 +909,16 @@ int MelCloud::step_index_(const Choice *choices, int choice_count, int current, 
     return -1;
   }
   if (dest < 0 || dest >= count) {
+    // Auto and Swing sit at the ends. From either of them, > starts at
+    // position 1 and < starts at position 5.
+    if (current == 0 || current == 7 || current == 12) {
+      const int edge = delta > 0 ? 1 : 5;
+      for (int i = 0; i < count; i++) {
+        if (choices[order[i]].value == edge) {
+          return order[i];
+        }
+      }
+    }
     return -1;
   }
   return order[dest];

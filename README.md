@@ -86,3 +86,16 @@ To upload a binary that is already built:
 ## Backplate
 
 The printable plate is [`enclosure/backplate.scad`](enclosure/backplate.scad). It has not been tested on the wall yet. Other snap plates, European-box mounts, and boxes are listed in [`enclosure/ALTERNATIVES.md`](enclosure/ALTERNATIVES.md), with the model pages in [`enclosure/references/README.md`](enclosure/references/README.md).
+
+## Header
+
+The back of the display has a shrouded 2×4 socket in the corner beside the Guition logo, on the opposite edge from the USB-C port. The pin nearest that corner is 5V. Looking at the back with that corner nearest you:
+
+```
+GND      GND
+GPIO40   RX/GPIO44
+GPIO2    TX/GPIO43
+GPIO1    5V
+```
+
+The right column is printed on the board: GND, RX, TX, 5V. The left column is not printed. Those are the relay pins: GPIO40 next to the grounds, GPIO2 in the middle, and GPIO1 beside 5V. GPIO1, GPIO2, and GPIO40 are 3.3 V signals. The 5V pin is power only, and it must not be fed while USB-C is plugged in.
